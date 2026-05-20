@@ -5,6 +5,7 @@ import bcrypt from 'bcrypt';
 import { getServerSession } from 'next-auth';
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: 'Credentials',
