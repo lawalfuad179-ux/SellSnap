@@ -1,0 +1,118 @@
+.pageTitle {
+  font-size: var(--font-headline-medium-font-size);
+  margin-bottom: var(--space-32);
+}
+
+.section {
+  margin-bottom: var(--space-24);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  color: var(--color-primary);
+  margin-bottom: var(--space-20);
+}
+
+.sectionHeader h2 {
+  font-size: var(--font-title-medium-font-size);
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.profileRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-24);
+}
+
+.businessName {
+  font-size: var(--font-title-large-font-size);
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+
+.email {
+  font-size: var(--font-body-medium-font-size);
+  color: var(--color-on-surface-variant);
+  margin-top: var(--space-4);
+}
+
+.name {
+  font-size: var(--font-body-medium-font-size);
+  color: var(--color-outline);
+  margin-top: var(--space-2);
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-16);
+}
+
+.field label {
+  font-size: var(--font-label-small-font-size);
+  color: var(--color-outline);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  display: block;
+  margin-bottom: var(--space-4);
+}
+
+.field p {
+  font-size: var(--font-body-large-font-size);
+  color: var(--color-on-surface);
+}
+
+.payoutGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-16);
+}
+
+.payoutCard {
+  background-color: var(--color-surface-container-low);
+  border-radius: var(--radius-md);
+  padding: var(--space-16);
+  text-align: center;
+  box-shadow: 0 1px 4px hsla(0, 0%, 0%, 0.06);
+}
+
+.payoutLabel {
+  font-size: var(--font-label-small-font-size);
+  color: var(--color-outline);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: var(--space-8);
+}
+
+.payoutValue {
+  font-size: var(--font-title-large-font-size);
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+
+.payoutValueAccent {
+  font-size: var(--font-title-large-font-size);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+@media (max-width: 768px) {
+  .fieldGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .payoutGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .profileRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-12);
+  }
+}

@@ -1,0 +1,379 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 250px;
+  height: 100vh;
+  background-color: var(--color-surface);
+  padding: var(--space-24);
+  position: sticky;
+  top: 0;
+  transition: width 0.25s ease;
+  overflow: visible;
+  z-index: 10;
+  box-shadow: 1px 0 8px hsla(0, 0%, 0%, 0.06);
+}
+
+.collapsed {
+  width: 72px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: var(--space-48);
+}
+
+.brandName {
+  color: var(--color-primary);
+  font-size: var(--font-headline-small-font-size);
+  cursor: default;
+  transition: opacity 0.4s;
+  white-space: nowrap;
+}
+
+.collapsed .brandName {
+  font-size: var(--font-title-large-font-size);
+}
+
+.brandName:hover {
+  opacity: 0.7;
+}
+
+.collapseToggle {
+  position: absolute;
+  top: 24px;
+  right: -14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: var(--color-surface);
+  border: none;
+  border-radius: var(--radius-full);
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+  transition: background-color 0.4s, color 0.4s;
+  z-index: 11;
+  box-shadow: 0 1px 4px hsla(0, 0%, 0%, 0.1);
+}
+
+.collapseToggle:hover {
+  background-color: var(--color-surface-container-highest);
+  color: var(--color-on-surface);
+}
+
+.collapseToggleCollapsed {
+  right: -14px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  flex-grow: 1;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  color: var(--color-outline);
+  font-size: var(--font-body-medium-font-size);
+  font-weight: 500;
+  padding: var(--space-8) var(--space-12);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: background-color 0.4s, color 0.4s;
+  white-space: nowrap;
+}
+
+.collapsed .navLink {
+  justify-content: center;
+  padding: var(--space-8);
+}
+
+.navLink:hover {
+  color: var(--color-on-surface);
+  background-color: var(--color-surface-container-highest, hsla(0, 0%, 0%, 0.04));
+}
+
+.active {
+  color: hsl(154, 100%, 30%);
+  background-color: hsla(154, 100%, 42%, 0.08);
+}
+
+.active:hover {
+  color: hsl(154, 100%, 30%);
+  background-color: hsla(154, 100%, 42%, 0.08);
+}
+
+.active .icon {
+  color: hsl(154, 100%, 30%);
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.footer {
+  border-top: 1px solid var(--color-outline-variant);
+  padding-top: var(--space-16);
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  background: none;
+  border: none;
+  color: var(--color-error);
+  cursor: pointer;
+  width: 100%;
+  font-size: var(--font-body-medium-font-size);
+  font-weight: 500;
+  padding: var(--space-8) var(--space-12);
+  border-radius: var(--radius-md);
+  transition: background-color 0.4s;
+  white-space: nowrap;
+}
+
+.collapsed .logoutButton {
+  justify-content: center;
+  padding: var(--space-8);
+}
+
+.logoutButton:hover {
+  background-color: hsla(0, 100%, 50%, 0.08);
+}
+
+.logoutIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.themeButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  background: none;
+  border: none;
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+  width: 100%;
+  font-size: var(--font-body-medium-font-size);
+  font-weight: 500;
+  padding: var(--space-8) var(--space-12);
+  border-radius: var(--radius-md);
+  transition: background-color 0.4s, color 0.4s;
+  white-space: nowrap;
+}
+
+.collapsed .themeButton {
+  justify-content: center;
+  padding: var(--space-8);
+}
+
+.themeButton:hover {
+  background-color: var(--color-surface-container-highest);
+  color: var(--color-on-surface);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: hsla(0, 0%, 0%, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.confirmDialog {
+  background-color: var(--color-surface-container-high, var(--color-surface));
+  border-radius: var(--radius-lg);
+  padding: var(--space-32);
+  padding-top: var(--space-24);
+  box-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.12);
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+}
+
+.confirmBrand {
+  color: var(--color-primary);
+  font-size: var(--font-headline-small-font-size);
+  margin-bottom: var(--space-16);
+}
+
+.confirmText {
+  font-size: var(--font-body-large-font-size);
+  color: var(--color-on-surface);
+  margin-bottom: var(--space-32);
+}
+
+.confirmActions {
+  display: flex;
+  gap: var(--space-8);
+}
+
+.cancelButton {
+  flex: 1;
+  background-color: var(--color-surface-container-highest, hsla(0, 0%, 0%, 0.04));
+  border: none;
+  color: var(--color-on-surface);
+  padding: var(--space-12);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-label-large-font-size);
+  font-weight: 600;
+  transition: background-color 0.4s;
+}
+
+.cancelButton:hover {
+  background-color: var(--color-surface-container-high);
+}
+
+.confirmLogoutButton {
+  flex: 1;
+  background-color: var(--color-error);
+  border: none;
+  color: white;
+  padding: var(--space-12);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-label-large-font-size);
+  font-weight: 600;
+  transition: opacity 0.4s;
+}
+
+.confirmLogoutButton:hover {
+  opacity: 0.85;
+}
+
+.mobileOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: hsla(0, 0%, 0%, 0.3);
+  z-index: 30;
+}
+
+.mobileClose {
+  display: none;
+  justify-content: flex-end;
+  margin-bottom: var(--space-8);
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: none;
+  border: none;
+  color: var(--color-on-surface);
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  background-color: var(--color-surface-container-highest);
+}
+
+.mobileHamburgerButton {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobileOverlay {
+    display: block;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 280px;
+    height: 100vh;
+    z-index: 40;
+    transition: left 0.25s ease;
+    border-right: none;
+    box-shadow: 2px 0 16px hsla(0, 0%, 0%, 0.12);
+  }
+
+  .mobileOpen {
+    left: 0;
+  }
+
+  .mobileClose {
+    display: none;
+  }
+
+  .collapseToggle {
+    display: none;
+  }
+
+  .mobileHamburgerButton {
+    display: flex;
+    position: fixed;
+    top: var(--space-16);
+    left: var(--space-16);
+    z-index: 100;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    border: none;
+    color: var(--color-on-surface);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px hsla(0, 0%, 0%, 0.08);
+    transition: left 0.25s ease, background-color 0.4s;
+  }
+
+  .mobileOpenButton {
+    left: 296px;
+  }
+
+  .mobileHamburgerButton:hover {
+    background-color: var(--color-surface-container-highest);
+  }
+}
+
+.hamburgerIcon {
+  width: 18px;
+  height: 12px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.hamburgerIcon span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background-color: var(--color-on-surface);
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.hamburgerIcon.open span:nth-child(1) {
+  transform: translateY(5px) rotate(45deg);
+}
+
+.hamburgerIcon.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburgerIcon.open span:nth-child(3) {
+  transform: translateY(-5px) rotate(-45deg);
+}

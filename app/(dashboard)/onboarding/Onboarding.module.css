@@ -1,0 +1,621 @@
+/* Onboarding flow — matches the uploaded screenshot design */
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16);
+  background-color: var(--color-background);
+}
+
+/* ── Brand header ── */
+.brand {
+  font-size: var(--font-headline-small-font-size);
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: var(--space-24);
+  letter-spacing: -0.5px;
+}
+
+/* ── Step indicator ── */
+.stepIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: var(--space-32);
+}
+
+.stepNode {
+  display: flex;
+  align-items: center;
+}
+
+.stepCircle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-label-large-font-size);
+  font-weight: 600;
+  transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease;
+  border: 2px solid transparent;
+  flex-shrink: 0;
+}
+
+.stepCircleCompleted {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: var(--color-primary);
+}
+
+.stepCircleActive {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: var(--color-primary);
+}
+
+.stepCircleInactive {
+  background-color: transparent;
+  color: var(--color-outline);
+  border-color: var(--color-outline-variant);
+}
+
+.stepLine {
+  width: 40px;
+  height: 2px;
+  transition: background-color 0.35s ease;
+}
+
+.stepLineCompleted {
+  background-color: var(--color-primary);
+}
+
+.stepLineIncomplete {
+  background-color: var(--color-outline-variant);
+}
+
+/* ── Card wrapper — holds back button + card ── */
+.cardWrapper {
+  width: 100%;
+  max-width: 520px;
+}
+
+/* ── Back button ── */
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: none;
+  border: none;
+  color: var(--color-on-surface-variant);
+  font-size: var(--font-body-medium-font-size);
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  padding: var(--space-8) 0;
+  margin-bottom: var(--space-12);
+  transition: color 0.2s ease;
+}
+
+.backButton:hover {
+  color: var(--color-on-surface);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── Main card ── */
+.card {
+  width: 100%;
+  background-color: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-md);
+  padding: var(--space-32) var(--space-24);
+  animation: cardFadeIn 0.4s ease;
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Skip button below card ── */
+.skipButton {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--color-on-surface-variant);
+  font-size: var(--font-body-medium-font-size);
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  text-underline-offset: 3px;
+  margin-top: var(--space-16);
+  text-align: center;
+  padding: var(--space-8);
+  transition: color 0.2s ease;
+}
+
+.skipButton:hover {
+  color: var(--color-on-surface);
+  text-decoration: underline;
+}
+
+.skipButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Welcome step (Step 1) ── */
+.welcomeIcon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--color-primary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-24);
+}
+
+.welcomeIconSvg {
+  color: var(--color-on-primary-container);
+}
+
+.welcomeHeading {
+  font-size: var(--font-headline-small-font-size);
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin-bottom: var(--space-12);
+  text-align: center;
+}
+
+.welcomeDescription {
+  font-size: var(--font-body-large-font-size);
+  font-weight: var(--font-body-large-font-weight);
+  color: var(--color-on-surface-variant);
+  margin-bottom: var(--space-32);
+  text-align: center;
+}
+
+.featureList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-20);
+  margin-bottom: var(--space-32);
+}
+
+.featureItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-12);
+}
+
+.featureEmoji {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.featureContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.featureTitle {
+  font-size: var(--font-body-large-font-size);
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.featureSubtitle {
+  font-size: var(--font-body-medium-font-size);
+  color: var(--color-on-surface-variant);
+  line-height: var(--font-body-medium-line-height);
+}
+
+/* ── CTA button (shared) ── */
+.ctaButton {
+  width: 100%;
+  height: 52px;
+  border: none;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: var(--font-body-large-font-size);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+}
+
+.ctaButton:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elevation-2);
+}
+
+.ctaButton:active {
+  transform: translateY(0);
+}
+
+.ctaButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Profile review step (Step 2) ── */
+.profileHeading {
+  font-size: var(--font-headline-small-font-size);
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin-bottom: var(--space-8);
+  text-align: left;
+}
+
+.profileSubtitle {
+  font-size: var(--font-body-large-font-size);
+  color: var(--color-on-surface-variant);
+  line-height: var(--font-body-large-line-height);
+  margin-bottom: var(--space-24);
+  text-align: left;
+}
+
+.profileCard {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-24);
+  margin-bottom: var(--space-16);
+}
+
+.profileAvatarWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: var(--space-20);
+  gap: var(--space-8);
+}
+
+.profileAvatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: var(--color-primary-container);
+  border: 2px solid var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-headline-small-font-size);
+  font-weight: 600;
+  color: var(--color-on-primary-container);
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition: border-color 0.2s ease;
+}
+
+.profileAvatar:hover {
+  border-color: var(--color-on-primary-container);
+}
+
+.profileAvatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.profileAvatarOverlay {
+  position: absolute;
+  inset: 0;
+  background-color: hsla(0, 0%, 0%, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 50%;
+}
+
+.profileAvatar:hover .profileAvatarOverlay {
+  opacity: 1;
+}
+
+.profileAvatarHint {
+  font-size: var(--font-label-small-font-size);
+  color: var(--color-on-surface-variant);
+}
+
+.profileDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.profileRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-12) var(--space-16);
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.profileRow:last-child {
+  border-bottom: none;
+}
+
+.profileRowLabel {
+  font-size: var(--font-body-medium-font-size);
+  color: var(--color-on-surface-variant);
+}
+
+.profileRowValue {
+  font-size: var(--font-body-medium-font-size);
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+/* Toned-down info banner — subtle background so it doesn't compete with the CTA */
+.profileInfoBanner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-12) var(--space-16);
+  background-color: var(--color-surface-container-low);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-24);
+}
+
+.profileInfoIcon {
+  color: var(--color-outline);
+  flex-shrink: 0;
+}
+
+.profileInfoText {
+  font-size: var(--font-body-medium-font-size);
+  color: var(--color-on-surface-variant);
+  line-height: var(--font-body-medium-line-height);
+}
+
+/* ── Bank step (Step 3) ── */
+.bankHeading {
+  font-size: var(--font-headline-small-font-size);
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin-bottom: var(--space-8);
+  text-align: left;
+}
+
+.bankSubtitle {
+  font-size: var(--font-body-large-font-size);
+  color: var(--color-on-surface-variant);
+  line-height: var(--font-body-large-line-height);
+  margin-bottom: var(--space-24);
+  text-align: left;
+}
+
+.bankForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+/* ── Inline field error ── */
+.fieldError {
+  font-size: var(--font-label-small-font-size);
+  color: var(--color-error);
+  margin-top: var(--space-4);
+}
+
+/* ── Product step (Step 4) ── */
+.productHeading {
+  font-size: var(--font-headline-small-font-size);
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin-bottom: var(--space-8);
+  text-align: left;
+}
+
+.productSubtitle {
+  font-size: var(--font-body-large-font-size);
+  color: var(--color-on-surface-variant);
+  line-height: var(--font-body-large-line-height);
+  margin-bottom: var(--space-24);
+  text-align: left;
+}
+
+.productForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+.textareaWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.textareaLabel {
+  font-size: var(--font-label-medium-font-size);
+  font-weight: var(--font-label-medium-font-weight);
+  color: var(--color-on-surface);
+}
+
+.textarea {
+  padding: var(--space-12);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--font-body-large-font-size);
+  color: var(--color-on-surface);
+  background-color: var(--color-surface);
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s ease;
+}
+
+.textarea:focus {
+  border-color: var(--color-primary);
+}
+
+/* ── Success state ── */
+.successContainer {
+  text-align: center;
+  padding: var(--space-24) 0;
+}
+
+.successIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--color-primary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-16);
+}
+
+.successText {
+  font-size: var(--font-body-large-font-size);
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+/* ── Error banner ── */
+.errorBanner {
+  background-color: var(--color-error-container);
+  color: var(--color-on-error-container);
+  padding: var(--space-12) var(--space-16);
+  border-radius: var(--radius-md);
+  font-size: var(--font-body-medium-font-size);
+  font-weight: 500;
+  margin-bottom: var(--space-16);
+  text-align: center;
+  max-width: 520px;
+  width: 100%;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  top: var(--space-24);
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-error-container);
+  color: var(--color-on-error-container);
+  padding: var(--space-12) var(--space-24);
+  border-radius: var(--radius-md);
+  font-size: var(--font-body-medium-font-size);
+  font-weight: 500;
+  z-index: 300;
+  box-shadow: var(--elevation-3);
+  max-width: 480px;
+  text-align: center;
+  animation: toastSlideIn 0.3s ease;
+}
+
+/* ── Bottom navigation footer (Stage 2) ── */
+.footerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-16);
+  width: 100%;
+}
+
+.backButtonBottom {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: none;
+  border: none;
+  color: var(--color-on-surface-variant);
+  font-size: var(--font-body-medium-font-size);
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  padding: var(--space-8) 0;
+  transition: color 0.2s ease;
+}
+
+.backButtonBottom:hover {
+  color: var(--color-on-surface);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.skipButtonBottom {
+  background: none;
+  border: none;
+  color: var(--color-on-surface-variant);
+  font-size: var(--font-body-medium-font-size);
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  text-underline-offset: 3px;
+  padding: var(--space-8) 0;
+  transition: color 0.2s ease;
+}
+
+.skipButtonBottom:hover {
+  color: var(--color-on-surface);
+  text-decoration: underline;
+}
+
+.skipButtonBottom:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .card {
+    padding: var(--space-24) var(--space-16);
+  }
+
+  .welcomeIcon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .welcomeHeading {
+    font-size: var(--font-title-large-font-size);
+  }
+
+  .profileHeading {
+    font-size: var(--font-title-large-font-size);
+  }
+
+  .bankHeading {
+    font-size: var(--font-title-large-font-size);
+  }
+
+  .productHeading {
+    font-size: var(--font-title-large-font-size);
+  }
+
+  .stepLine {
+    width: 24px;
+  }
+}

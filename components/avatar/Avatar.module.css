@@ -1,0 +1,53 @@
+.avatar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.small {
+  width: 36px;
+  height: 36px;
+  font-size: var(--font-label-large-font-size);
+}
+
+.large {
+  width: 96px;
+  height: 96px;
+  font-size: var(--font-display-small-font-size);
+  font-weight: 700;
+}
+
+.initials {
+  line-height: 1;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.uploadOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: hsla(0, 0%, 0%, 0.5);
+  color: white;
+  font-size: var(--font-label-medium-font-size);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.4s;
+}
+
+.uploadOverlay:hover {
+  background-color: hsla(0, 0%, 0%, 0.6);
+}

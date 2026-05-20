@@ -1,0 +1,176 @@
+.wrapper {
+  position: relative;
+}
+
+.bellButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: none;
+  border: none;
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+  transition: background-color 0.4s, color 0.4s;
+}
+
+.bellButton:hover {
+  background-color: var(--color-surface-container-highest);
+  color: var(--color-on-surface);
+}
+
+.badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-error);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 340px;
+  max-height: 400px;
+  background-color: var(--color-surface-container-high, var(--color-surface));
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.12);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-16);
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.headerTitle {
+  font-weight: 600;
+  font-size: var(--font-label-large-font-size);
+  color: var(--color-on-surface);
+}
+
+.markReadButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: var(--font-label-small-font-size);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.4s;
+}
+
+.markReadButton:hover {
+  opacity: 0.7;
+}
+
+.list {
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.empty {
+  padding: var(--space-24);
+  text-align: center;
+  color: var(--color-on-surface-variant);
+  font-size: var(--font-body-medium-font-size);
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-12);
+  padding: var(--space-12) var(--space-16);
+  border-bottom: 1px solid var(--color-outline-variant);
+  transition: background-color 0.4s;
+  position: relative;
+}
+
+.item:hover {
+  background-color: var(--color-surface-container-highest);
+}
+
+.read {
+  opacity: 0.6;
+}
+
+.unread {
+  background-color: hsla(154, 100%, 42%, 0.04);
+}
+
+.unreadDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.itemContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.itemTitle {
+  font-size: var(--font-label-large-font-size);
+  font-weight: 600;
+  color: var(--color-on-surface);
+  margin-bottom: var(--space-4);
+}
+
+.itemMessage {
+  font-size: var(--font-body-small-font-size);
+  color: var(--color-on-surface-variant);
+  line-height: 1.4;
+  margin-bottom: var(--space-4);
+}
+
+.itemTime {
+  font-size: var(--font-label-small-font-size);
+  color: var(--color-outline);
+}
+
+.markOneButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: background-color 0.4s;
+}
+
+.item:hover .markOneButton {
+  display: flex;
+}
+
+.markOneButton:hover {
+  background-color: hsla(154, 100%, 42%, 0.1);
+}

@@ -1,0 +1,95 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.label {
+  font-size: var(--font-label-medium-font-size);
+  font-weight: var(--font-label-medium-font-weight);
+  color: var(--color-on-surface);
+}
+
+.inputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  height: 44px;
+  padding: 0 var(--space-12);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--font-body-large-font-size);
+  color: var(--color-on-surface);
+  background-color: var(--color-surface);
+  transition: border-color 0.6s, box-shadow 0.6s;
+  outline: none;
+  width: 100%;
+}
+
+.inputPassword {
+  padding-right: 44px;
+}
+
+.input:focus {
+  border-color: var(--color-primary);
+  border-width: 0.75px;
+  box-shadow: 0 0 0 2px var(--color-primary-container), 0 8px 24px hsla(154, 100%, 42%, 0.12);
+}
+
+.input.filled {
+  background-color: var(--color-inverse-on-surface);
+}
+
+.input.hasError {
+  border-color: var(--color-error);
+}
+
+.input.hasError:focus {
+  box-shadow: 0 0 0 2px var(--color-error-container);
+}
+
+.togglePassword {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: none;
+  border: none;
+  color: var(--color-outline);
+  cursor: pointer;
+  transition: color 0.4s, background-color 0.4s;
+  flex-shrink: 0;
+}
+
+.togglePassword:hover {
+  color: var(--color-on-surface-variant);
+  background-color: var(--color-surface-container-highest);
+}
+
+.errorText {
+  font-size: var(--font-label-small-font-size);
+  color: var(--color-error);
+  margin-top: var(--space-4);
+}
+
+@keyframes onAutoFillStart {}
+@keyframes onAutoFillCancel {}
+
+.input:-webkit-autofill {
+  animation-name: onAutoFillStart;
+}
+
+.input:not(:-webkit-autofill) {
+  animation-name: onAutoFillCancel;
+}

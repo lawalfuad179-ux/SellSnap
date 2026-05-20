@@ -1,0 +1,25 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-8);
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pending {
+  background-color: var(--color-surface-variant);
+  color: var(--color-on-surface-variant);
+}
+
+.paid {
+  background-color: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+}
+
+.failed {
+  background-color: var(--color-error-container);
+  color: var(--color-on-error-container);
+}
