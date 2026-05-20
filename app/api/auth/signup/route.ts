@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { signupSchema } from '@/lib/validators/authSchemas';
 
 import { authRateLimiter } from '@/lib/rate-limit';
