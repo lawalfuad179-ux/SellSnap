@@ -16,7 +16,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className={styles.layout}>
-      <Sidebar mobileOpen={mobileOpen} onCloseMobile={closeMobile} onOpenMobile={openMobile} />
+      <Sidebar mobileOpen={mobileOpen} onCloseMobile={closeMobile} onOpenMobile={openMobile} onboarding={isOnboarding} />
       <main className={styles.mainContent}>
         <div className={`${styles.container} ${isOnboarding ? styles.onboardingContainer : styles.dashboardContainer}`}>
           {children}

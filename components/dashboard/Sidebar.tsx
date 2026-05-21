@@ -19,9 +19,10 @@ interface SidebarProps {
   mobileOpen: boolean;
   onCloseMobile: () => void;
   onOpenMobile: () => void;
+  onboarding?: boolean;
 }
 
-export const Sidebar = ({ mobileOpen, onCloseMobile, onOpenMobile }: SidebarProps) => {
+export const Sidebar = ({ mobileOpen, onCloseMobile, onOpenMobile, onboarding }: SidebarProps) => {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
@@ -56,6 +57,16 @@ export const Sidebar = ({ mobileOpen, onCloseMobile, onOpenMobile }: SidebarProp
       </Link>
     );
   });
+
+  if (onboarding) {
+    return (
+      <aside className={`${styles.sidebar} ${styles.onboardingSidebar}`}>
+        <div className={styles.brand}>
+          <h2 className={styles.brandName}>SellSnap</h2>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <>
