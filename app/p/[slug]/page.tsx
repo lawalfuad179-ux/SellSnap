@@ -41,6 +41,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+function getInitial(name: string) {
+  return name.trim().charAt(0).toUpperCase() || '?';
+}
+
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
   const product = await prisma.product.findUnique({
@@ -64,43 +68,70 @@ export default async function ProductPage({ params }: Props) {
   return (
     <div className={styles.pageContainer}>
       <MouseTracker />
+
       <div className={styles.topBar}>
         <BackLink href="/" />
         <ProductPageHeader />
       </div>
-      <div className={styles.imageWrapper}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img 
-          src={product.imageUrl} 
-          alt={product.name} 
-          className={styles.productImage} 
-        />
-      </div>
 
-      <div className={styles.content}>
-        <div className={styles.breadcrumb}>
-          <span className={styles.businessName}>{product.user.businessName}</span>
-          <span className={styles.breadcrumbDot} />
-          <span>Product</span>
+      <div className={styles.productCard}>
+        <div className={styles.merchantHeader}>
+          <div className={styles.merchantAvatar} aria-hidden="true">
+            {product.user.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={product.user.avatarUrl}
+                alt={product.user.businessName}
+                className={styles.merchantAvatarImage}
+              />
+            ) : (
+              <span className={styles.merchantAvatarInitial}>
+                {getInitial(product.user.businessName)}
+              </span>
+            )}
+          </div>
+          <span className={styles.merchantName}>{product.user.businessName}</span>
         </div>
 
-        <h1 className={styles.productName}>{product.name}</h1>
+        <div className={styles.productGrid}>
+          <div className={styles.imageColumn}>
+            <div className={styles.imageWrapper}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={product.imageUrl}
+                alt={product.name}
+                className={styles.productImage}
+              />
+            </div>
+          </div>
 
-        <div className={styles.priceRow}>
-          <span className={styles.price}>₦{(product.price / 100).toLocaleString()}</span>
-          <span className={styles.priceLabel}>One-Time Payment</span>
+          <div className={styles.detailsColumn}>
+            <span className={styles.eyebrow}>Product</span>
+
+            <h1 className={styles.productName}>{product.name}</h1>
+
+            <div className={styles.priceRow}>
+              <span className={styles.price}>
+                ₦{(product.price / 100).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+              <span className={styles.priceLabel}>One-Time Payment</span>
+            </div>
+
+            <div className={styles.divider} />
+
+            <div className={styles.descriptionBlock}>
+              <p className={styles.descriptionLabel}>Description</p>
+              <p className={styles.descriptionText}>{product.description}</p>
+            </div>
+
+            <div className={styles.paymentCard}>
+              <PayNowButton productId={product.id} price={product.price} />
+            </div>
+          </div>
         </div>
-
-        <div className={styles.divider} />
-
-        <div className={styles.description}>
-          <p className={styles.descriptionLabel}>Product Description</p>
-          <p>{product.description}</p>
-        </div>
-      </div>
-
-      <div className={styles.payWrapper}>
-        <PayNowButton productId={product.id} price={product.price} />
       </div>
     </div>
   );

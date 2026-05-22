@@ -60,11 +60,41 @@ export const Sidebar = ({ mobileOpen, onCloseMobile, onOpenMobile, onboarding }:
 
   if (onboarding) {
     return (
-      <aside className={`${styles.sidebar} ${styles.onboardingSidebar}`}>
-        <div className={styles.brand}>
-          <h2 className={styles.brandName}>SellSnap</h2>
-        </div>
-      </aside>
+      <>
+        <aside className={`${styles.sidebar} ${styles.onboardingSidebar}`}>
+          <div className={styles.brand}>
+            <h2 className={styles.brandName}>SellSnap</h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-16)', marginTop: 'auto' }}>
+            <button type="button" className={styles.themeButton} onClick={toggleTheme} aria-label="Toggle theme">
+              {dark ? <Moon size={20} /> : <Sun size={20} />}
+              <span>{dark ? 'Dark Mode' : 'Light Mode'}</span>
+            </button>
+            <div className={styles.footer}>
+              <button type="button" className={styles.logoutButton} onClick={() => setShowConfirm(true)}>
+                <LogOut className={styles.logoutIcon} />
+                <span>Log out</span>
+              </button>
+            </div>
+          </div>
+        </aside>
+        {showConfirm && (
+          <div className={styles.overlay} onClick={() => setShowConfirm(false)}>
+            <div className={styles.confirmDialog} onClick={(e) => e.stopPropagation()}>
+              <h2 className={styles.confirmBrand}>SellSnap</h2>
+              <p className={styles.confirmText}>Are you sure you want to log out?</p>
+              <div className={styles.confirmActions}>
+                <button className={styles.cancelButton} onClick={() => setShowConfirm(false)}>
+                  Cancel
+                </button>
+                <button className={styles.confirmLogoutButton} onClick={handleLogout}>
+                  Log out
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 

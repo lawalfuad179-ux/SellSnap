@@ -2,7 +2,7 @@ import { getSession } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { OrdersTable } from '@/components/orders/OrdersTable';
 
-export default async function OrdersPage() {
+export default async function OrdersView() {
   const session = await getSession();
   if (!session) return null;
 

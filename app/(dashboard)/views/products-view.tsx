@@ -1,8 +1,8 @@
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/db';
-import { ProductsClient } from './ProductsClient';
+import { ProductsClient } from '../products/ProductsClient';
 
-export default async function ProductsPage() {
+export default async function ProductsView() {
   const session = await getSession();
   if (!session) return null;
 

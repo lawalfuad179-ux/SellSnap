@@ -17,9 +17,31 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loaded, setLoaded] = useState(false);
 
-  const userName = session?.user?.name || 'there';
+  const userName = session?.user?.name ? session.user.name.charAt(0).toUpperCase() + session.user.name.slice(1) : 'There';
   const userBusinessName = (session?.user as any)?.businessName || '';
+
+  useEffect(() => {
+    if (!session || loaded) return;
+    fetch('/api/auth/onboarding-step')
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.ok && json.data && !json.data.complete) {
+          setStep(json.data.step);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoaded(true));
+  }, [session, loaded]);
+
+  const saveStep = (s: number) => {
+    fetch('/api/auth/onboarding-step', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ step: s }),
+    }).catch(() => {});
+  };
 
   const handleFinish = async () => {
     setIsLoading(true);
@@ -37,6 +59,12 @@ export default function OnboardingPage() {
       router.push('/dashboard');
       router.refresh();
     }
+  };
+
+  const advance = (next: number) => {
+    setError('');
+    setStep(next);
+    saveStep(next);
   };
 
   const handleBack = () => {
@@ -91,7 +119,7 @@ export default function OnboardingPage() {
       {/* Card wrapper with back button */}
       <div className={styles.cardWrapper}>
         {/* Back button */}
-        {step !== 1 && (
+        {step !== 1 && step !== 2 && step !== 3 && (
           <button type="button" className={styles.backButton} onClick={handleBack}>
             <ArrowLeft size={16} />
             Back
@@ -100,46 +128,38 @@ export default function OnboardingPage() {
 
         {/* Card content */}
         <div className={styles.card}>
-          {step === 0 && (
-            <StepWelcome
-              userName={userName}
-              onContinue={() => {
-                setError('');
-                setStep(1);
-              }}
-            />
-          )}
+          <div key={step} className={styles.stepTransition}>
+            {step === 0 && (
+              <StepWelcome
+                userName={userName}
+                onContinue={() => advance(1)}
+              />
+            )}
 
-          {step === 1 && (
-            <StepProfile
-              userName={userName}
-              businessName={userBusinessName}
-              onContinue={() => {
-                setError('');
-                setStep(2);
-              }}
-            />
-          )}
+            {step === 1 && (
+              <StepProfile
+                userName={userName}
+                businessName={userBusinessName}
+                onContinue={() => advance(2)}
+              />
+            )}
 
-          {step === 2 && (
-            <StepBank
-              onContinue={() => {
-                setError('');
-                setStep(3);
-              }}
-            />
-          )}
+            {step === 2 && (
+              <StepBank
+                onContinue={() => advance(3)}
+              />
+            )}
 
-          {step === 3 && (
-            <StepProduct
-              onFinish={handleFinish}
-              isLoading={isLoading}
-            />
-          )}
+            {step === 3 && (
+              <StepProduct
+                onFinish={handleFinish}
+              />
+            )}
+          </div>
         </div>
 
         {/* Bottom navigation footer for stage two (step === 1) */}
-        {step === 1 ? (
+        {step === 1 || step === 2 || step === 3 ? (
           <div className={styles.footerRow}>
             <button type="button" className={styles.backButtonBottom} onClick={handleBack}>
               <ArrowLeft size={16} />
@@ -270,7 +290,7 @@ function StepProfile({
 
   return (
     <>
-      <h1 className={styles.profileHeading}>Your profile looks great 👤</h1>
+      <h1 className={styles.profileHeading}>Your profile looks great</h1>
       <p className={styles.profileSubtitle}>
         Here&apos;s how buyers will see your seller details on every product page.
         You can update these anytime from Settings.
@@ -344,14 +364,6 @@ function StepProfile({
         </div>
       </div>
 
-      {/* Info banner — toned down */}
-      <div className={styles.profileInfoBanner}>
-        <Info size={18} className={styles.profileInfoIcon} />
-        <span className={styles.profileInfoText}>
-          Your payment link will show your business name to buyers.
-        </span>
-      </div>
-
       {/* CTA */}
       <button type="button" className={styles.ctaButton} onClick={onContinue}>
         Looks Good, Continue →
@@ -368,7 +380,6 @@ function StepBank({
 }: {
   onContinue: () => void;
 }) {
-  const [connected, setConnected] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -419,8 +430,7 @@ function StepBank({
         showToast(json.error || 'Something went wrong');
         setSubmitting(false);
       } else {
-        setConnected(true);
-        setSubmitting(false);
+        onContinue();
       }
     } catch {
       showToast('Something went wrong');
@@ -428,46 +438,26 @@ function StepBank({
     }
   };
 
-  if (connected) {
-    return (
-      <div className={styles.successContainer}>
-        <div className={styles.successIcon}>
-          <Check size={28} style={{ color: 'var(--color-primary)' }} />
-        </div>
-        <p className={styles.successText}>Bank account connected!</p>
-        <button
-          type="button"
-          className={styles.ctaButton}
-          style={{ marginTop: 'var(--space-24)' }}
-          onClick={onContinue}
-        >
-          Continue →
-        </button>
-      </div>
-    );
-  }
-
   return (
     <>
       <Toast message={toastMsg} visible={toastVisible} onDismiss={() => setToastVisible(false)} />
 
-      <h1 className={styles.bankHeading}>Connect your bank 🏦</h1>
+      <h1 className={styles.bankHeading}>Connect your bank</h1>
       <p className={styles.bankSubtitle}>
-        Add your bank details so we can send your earnings directly to you.
-        You can also do this later from Settings.
+        Add your bank details to receive payouts.
       </p>
 
       <form onSubmit={handleSubmit} className={styles.bankForm} noValidate>
         <div>
-          <Input label="Bank name" name="bankName" id="onboarding-bank" autoFocus />
+          <Input label="Bank name" name="bankName" id="onboarding-bank" placeholder="e.g. GTBank, Access Bank" autoFocus onChange={() => setFieldErrors((prev) => ({ ...prev, bankName: '' }))} />
           {fieldErrors.bankName && <p className={styles.fieldError}>{fieldErrors.bankName}</p>}
         </div>
         <div>
-          <Input label="Account number" name="accountNumber" id="onboarding-accnum" type="text" maxLength={10} />
+          <Input label="Account number" name="accountNumber" id="onboarding-accnum" type="text" maxLength={10} placeholder="0123456789" onChange={() => setFieldErrors((prev) => ({ ...prev, accountNumber: '' }))} />
           {fieldErrors.accountNumber && <p className={styles.fieldError}>{fieldErrors.accountNumber}</p>}
         </div>
         <div>
-          <Input label="Account name" name="accountName" id="onboarding-accname" />
+          <Input label="Account name" name="accountName" id="onboarding-accname" placeholder="Full name on the account" onChange={() => setFieldErrors((prev) => ({ ...prev, accountName: '' }))} />
           {fieldErrors.accountName && <p className={styles.fieldError}>{fieldErrors.accountName}</p>}
         </div>
         <button type="submit" className={styles.ctaButton} disabled={submitting}>
@@ -483,12 +473,9 @@ function StepBank({
    ─────────────────────────────────────────────── */
 function StepProduct({
   onFinish,
-  isLoading,
 }: {
   onFinish: () => void;
-  isLoading: boolean;
 }) {
-  const [created, setCreated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
@@ -528,44 +515,22 @@ function StepProduct({
       showToast(res.error?.message || 'Failed to create product');
       setSubmitting(false);
     } else {
-      setCreated(true);
-      setSubmitting(false);
+      onFinish();
     }
   };
-
-  if (created) {
-    return (
-      <div className={styles.successContainer}>
-        <div className={styles.successIcon}>
-          <Check size={28} style={{ color: 'var(--color-primary)' }} />
-        </div>
-        <p className={styles.successText}>Product created! 🎉</p>
-        <button
-          type="button"
-          className={styles.ctaButton}
-          style={{ marginTop: 'var(--space-24)' }}
-          onClick={onFinish}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Finishing...' : 'Go to Dashboard →'}
-        </button>
-      </div>
-    );
-  }
 
   return (
     <>
       <Toast message={toastMsg} visible={toastVisible} onDismiss={() => setToastVisible(false)} />
 
-      <h1 className={styles.productHeading}>Add your first product 🛍️</h1>
+      <h1 className={styles.productHeading}>Add your first product</h1>
       <p className={styles.productSubtitle}>
-        Create a product and share its payment link with your customers.
-        You can always add more products later.
+        Create your first product and start selling instantly.
       </p>
 
       <form onSubmit={handleSubmit} className={styles.productForm} noValidate>
         <div>
-          <Input label="Product name" name="name" id="onboarding-product-name" autoFocus />
+          <Input label="Product name" name="name" id="onboarding-product-name" placeholder="e.g. Premium Sneakers" autoFocus onChange={() => setFieldErrors((prev) => ({ ...prev, name: '' }))} />
           {fieldErrors.name && <p className={styles.fieldError}>{fieldErrors.name}</p>}
         </div>
         <div className={styles.textareaWrapper}>
@@ -578,11 +543,12 @@ function StepProduct({
             rows={3}
             className={styles.textarea}
             placeholder="Describe your product..."
+            onChange={() => setFieldErrors((prev) => ({ ...prev, description: '' }))}
           />
           {fieldErrors.description && <p className={styles.fieldError}>{fieldErrors.description}</p>}
         </div>
         <div>
-          <Input label="Price (₦)" name="price" id="onboarding-product-price" type="number" min={100} />
+          <Input label="Price (₦)" name="price" id="onboarding-product-price" type="number" min={100} placeholder="5000" onChange={() => setFieldErrors((prev) => ({ ...prev, price: '' }))} />
           {fieldErrors.price && <p className={styles.fieldError}>{fieldErrors.price}</p>}
         </div>
         <div>

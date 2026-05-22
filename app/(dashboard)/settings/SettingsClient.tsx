@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { ScheduleWithdrawalModal } from '@/components/settings/ScheduleWithdrawalModal';
-import { Pencil, Trash2, Plus, Check } from 'lucide-react';
+import { Pencil, Trash2, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import styles from './Settings.module.css';
 
@@ -271,7 +271,7 @@ export const SettingsClient = () => {
         <div className={styles.formActions}>
           <button className={styles.cancelBtn} onClick={() => { setEditing(false); setFormError(''); }}>Cancel</button>
           <button className={styles.saveBtn} onClick={saveAccount} disabled={saving}>
-            {saving ? 'Saving...' : <><Check size={14} /> Save Account</>}
+            {saving ? 'Saving...' : 'Save Account'}
           </button>
         </div>
       </div>

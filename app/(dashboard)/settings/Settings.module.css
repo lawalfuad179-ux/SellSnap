@@ -32,11 +32,11 @@
 .editBtn {
   display: flex;
   align-items: center;
-  gap: var(--space-6);
+  gap: var(--space-8);
   background: none;
   border: none;
   color: var(--color-primary);
-  font-size: var(--font-label-medium-font-size);
+  font-size: var(--font-body-medium-font-size);
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { ArrowLeft } from 'lucide-react';
+
 
 export function LoginForm({ onToggle, onForgotPassword }: { onToggle: () => void; onForgotPassword: () => void }) {
   const router = useRouter();
@@ -68,23 +68,6 @@ export function LoginForm({ onToggle, onForgotPassword }: { onToggle: () => void
 
   return (
     <div style={{ width: '100%', maxWidth: '400px' }}>
-      <button
-        onClick={onToggle}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--space-4)',
-          color: 'var(--color-on-surface-variant)',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: 'var(--font-body-medium-font-size)',
-          marginBottom: 'var(--space-16)',
-        }}
-      >
-        <ArrowLeft size={16} />
-        Create account
-      </button>
       {error && (
         <div style={{
           backgroundColor: 'var(--color-error-container)',

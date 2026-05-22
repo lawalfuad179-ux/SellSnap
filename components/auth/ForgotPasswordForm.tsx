@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 interface ForgotPasswordFormProps {
   onBack: () => void;
@@ -100,24 +100,6 @@ export const ForgotPasswordForm = ({ onBack }: ForgotPasswordFormProps) => {
 
   return (
     <div style={{ width: '100%', maxWidth: '400px' }}>
-      <button
-        onClick={onBack}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--space-4)',
-          color: 'var(--color-on-surface-variant)',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: 'var(--font-body-medium-font-size)',
-          marginBottom: 'var(--space-24)',
-        }}
-      >
-        <ArrowLeft size={16} />
-        Back to login
-      </button>
-
       <div style={{ textAlign: 'center', marginBottom: 'var(--space-32)' }}>
         <h2 style={{ fontSize: 'var(--font-title-medium-font-size)', fontWeight: 600, marginBottom: 'var(--space-8)', color: 'var(--color-on-surface)' }}>
           Forgot password?

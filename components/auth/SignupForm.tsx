@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+
 
 export function SignupForm({ onToggle }: { onToggle: () => void }) {
   const router = useRouter();
@@ -136,23 +137,6 @@ export function SignupForm({ onToggle }: { onToggle: () => void }) {
 
   return (
     <div style={{ width: '100%', maxWidth: '400px' }}>
-      <button
-        onClick={onToggle}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--space-4)',
-          color: 'var(--color-on-surface-variant)',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: 'var(--font-body-medium-font-size)',
-          marginBottom: 'var(--space-16)',
-        }}
-      >
-        <ArrowLeft size={16} />
-        Back to login
-      </button>
       <div style={{ textAlign: 'center', marginBottom: 'var(--space-32)' }}>
         <h1 style={{ marginBottom: 'var(--space-24)', fontSize: 'var(--font-title-large-font-size)' }}><Link href="/" style={{ color: 'var(--color-primary)', textDecoration: 'none', display: 'inline-block', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>SellSnap</Link></h1>
         <p style={{ color: 'var(--color-on-surface-variant)', fontSize: 'var(--font-headline-small-font-size)', fontWeight: '700', marginBottom: 'var(--space-8)' }}>
@@ -196,7 +180,7 @@ export function SignupForm({ onToggle }: { onToggle: () => void }) {
           <div style={{ marginTop: 'var(--space-8)' }}>
             <Button type="button" onClick={handleContinue} fullWidth>
               Continue
-              <ArrowRight size={20} strokeWidth={1.5} style={{ marginLeft: 'var(--space-4)' }} />
+              <span className="desktop-only"><ArrowRight size={20} strokeWidth={1.5} style={{ marginLeft: 'var(--space-4)' }} /></span>
             </Button>
           </div>
         </div>

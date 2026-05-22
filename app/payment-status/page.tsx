@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { MouseTracker } from '@/components/effects/MouseTracker';
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { PartyPopper, XCircle, Loader2 } from 'lucide-react';
 
 interface Props {
   searchParams: Promise<{ orderId?: string; status?: string; tx_ref?: string; productSlug?: string }>;
@@ -68,7 +68,7 @@ export default function PaymentStatusPage({ searchParams }: Props) {
 
         {state === 'success' && (
           <>
-            <CheckCircle size={48} style={{ color: '#16a34a', marginBottom: 'var(--space-16)' }} />
+            <PartyPopper size={48} style={{ color: '#16a34a', marginBottom: 'var(--space-16)' }} />
             <h2 style={{ color: '#16a34a', marginBottom: 'var(--space-16)' }}>Payment Successful!</h2>
             <p style={{ color: 'var(--color-on-surface-variant)', marginBottom: 'var(--space-24)' }}>
               Your payment has been confirmed. The seller has been notified.

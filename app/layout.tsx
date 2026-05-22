@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Providers from '@/components/Providers';
+import { PageTransition } from '@/components/ui/PageTransition';
 import './globals.css';
 
 const inter = Inter({
@@ -24,7 +25,9 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body>
         <Providers>
-          {children}
+          <PageTransition>
+            {children}
+          </PageTransition>
         </Providers>
       </body>
     </html>

@@ -13,7 +13,7 @@
   box-shadow: 1px 0 8px hsla(0, 0%, 0%, 0.06);
 }
 
-.onboardingSidebar {
+.onboardingSidebar .brand {
   pointer-events: none;
   user-select: none;
 }

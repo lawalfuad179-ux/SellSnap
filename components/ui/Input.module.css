@@ -31,6 +31,11 @@
   width: 100%;
 }
 
+.input::placeholder {
+  color: var(--color-outline);
+  opacity: 0.5;
+}
+
 .inputPassword {
   padding-right: 44px;
 }

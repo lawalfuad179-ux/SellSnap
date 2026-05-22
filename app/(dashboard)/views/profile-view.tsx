@@ -3,10 +3,10 @@ import prisma from '@/lib/db';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/avatar/Avatar';
 import { BackLink } from '@/components/ui/BackLink';
-import styles from './Profile.module.css';
+import styles from '../profile/Profile.module.css';
 import { Store, User, Banknote } from 'lucide-react';
 
-export default async function ProfilePage() {
+export default async function ProfileView() {
   const session = await getSession();
   if (!session) return null;
 

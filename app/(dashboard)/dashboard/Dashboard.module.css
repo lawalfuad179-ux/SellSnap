@@ -34,12 +34,22 @@
   color: var(--color-on-surface);
 }
 
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-16);
+  margin-bottom: var(--space-48);
+}
+
 .statCard {
   background-color: var(--color-surface-container-low);
   box-shadow: 0 1px 4px hsla(0, 0%, 0%, 0.06);
+}
+
+.statBody {
   display: flex;
   flex-direction: column;
-  gap: var(--space-16);
+  gap: var(--space-4);
 }
 
 .statLabel {
@@ -48,6 +58,12 @@
   color: var(--color-outline);
   text-transform: uppercase;
   letter-spacing: 0.3px;
+}
+
+.statValueRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-6);
 }
 
 .statValue {
