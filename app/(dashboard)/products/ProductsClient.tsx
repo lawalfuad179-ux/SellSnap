@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
-import { Plus, Search, ExternalLink, Copy, Check, Pencil, ChevronDown, Share2 } from 'lucide-react';
+import { Plus, Search, ExternalLink, Copy, Check, Pencil, ChevronDown, Share2, Trash2 } from 'lucide-react';
 import { ShareModal } from '@/components/product/ShareModal';
 import { AddProductModal } from '@/components/product/AddProductModal';
 import { EditProductModal } from '@/components/product/EditProductModal';
+import { deleteProductAction, undeleteProductAction } from '../actions';
 import styles from './Products.module.css';
+import { useRouter } from 'next/navigation';
 
 interface Product {
   id: string;
@@ -24,6 +25,7 @@ type SortDir = 'asc' | 'desc';
 type PriceFilter = 'all' | 'low' | 'mid' | 'high';
 
 export const ProductsClient = ({ products }: { products: Product[] }) => {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -33,6 +35,49 @@ export const ProductsClient = ({ products }: { products: Product[] }) => {
   const [shareProduct, setShareProduct] = useState<Product | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
+  const [toastVisible, setToastVisible] = useState(false);
+  const [deletedData, setDeletedData] = useState<any>(null);
+  const [undoing, setUndoing] = useState(false);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setToastVisible(true);
+    clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
+      setToastVisible(false);
+      setDeletedData(null);
+    }, 3000);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteProduct) return;
+    setDeleting(true);
+    const res = await deleteProductAction(deleteProduct.id);
+    if (res.ok) {
+      setDeletedData(res.data);
+      showToast('Product deleted');
+    } else {
+      showToast(res.error?.message || 'Failed to delete product');
+    }
+    setDeleteProduct(null);
+    setDeleting(false);
+  };
+
+  const handleUndo = async () => {
+    if (!deletedData) return;
+    clearTimeout(toastTimerRef.current);
+    setUndoing(true);
+    const res = await undeleteProductAction(deletedData);
+    if (res.ok) {
+      setToastVisible(false);
+      setDeletedData(null);
+    }
+    setUndoing(false);
+  };
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -101,16 +146,30 @@ export const ProductsClient = ({ products }: { products: Product[] }) => {
       <div>
         <div className={styles.header}>
           <h1 className={styles.title}>Products</h1>
-          <Button onClick={() => setShowAddModal(true)}>
+          <button
+            type="button"
+            className={styles.addBtn}
+            onClick={() => setShowAddModal(true)}
+          >
             <Plus size={16} style={{ marginRight: 'var(--space-4)' }} />
             Add Product
-          </Button>
+          </button>
         </div>
         <div className={styles.emptyState}>
           <h3>No products yet</h3>
           <p>Create your first product and start selling with a shareable link.</p>
-          <Button onClick={() => setShowAddModal(true)}>Create Product</Button>
+          <button
+            type="button"
+            className={styles.addBtn}
+            onClick={() => setShowAddModal(true)}
+          >
+            Create Product
+          </button>
         </div>
+
+        {showAddModal && (
+          <AddProductModal onClose={() => setShowAddModal(false)} />
+        )}
       </div>
     );
   }
@@ -119,10 +178,14 @@ export const ProductsClient = ({ products }: { products: Product[] }) => {
     <div>
       <div className={styles.header}>
         <h1 className={styles.title}>Products ({products.length})</h1>
-          <Button onClick={() => setShowAddModal(true)}>
+          <button
+            type="button"
+            className={styles.addBtn}
+            onClick={() => setShowAddModal(true)}
+          >
             <Plus size={16} style={{ marginRight: 'var(--space-4)' }} />
             Add Product
-          </Button>
+          </button>
         </div>
 
       <div className={styles.toolbar}>
@@ -239,6 +302,17 @@ export const ProductsClient = ({ products }: { products: Product[] }) => {
                       </Link>
                       <span className={styles.tooltip}>View live</span>
                     </span>
+                    <span className={styles.tooltipWrapper}>
+                      <button
+                        type="button"
+                        className={styles.actionBtn}
+                        onClick={() => setDeleteProduct(product)}
+                        style={{ color: 'var(--color-error)' }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                      <span className={styles.tooltip}>Delete</span>
+                    </span>
                   </div>
                 </td>
               </tr>
@@ -258,6 +332,112 @@ export const ProductsClient = ({ products }: { products: Product[] }) => {
       {editProduct && (
         <EditProductModal product={editProduct} onClose={() => setEditProduct(null)} />
       )}
+
+      {/* Delete confirmation overlay */}
+      {deleteProduct && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 300,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backgroundColor: 'hsla(0, 0%, 0%, 0.4)',
+            animation: 'popupFadeIn 0.2s ease',
+          }}
+          onClick={() => { setDeleteProduct(null); setDeleting(false); }}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--color-surface)',
+              borderRadius: 'var(--radius-lg)',
+              padding: 'var(--space-24)',
+              maxWidth: 380, width: '90%',
+              textAlign: 'center',
+              boxShadow: 'var(--elevation-3)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginBottom: 'var(--space-8)', color: 'var(--color-on-surface)', fontSize: 'var(--font-title-medium-font-size)' }}>
+              Delete Product
+            </h3>
+            <p style={{ marginBottom: 'var(--space-24)', color: 'var(--color-on-surface-variant)', fontSize: 'var(--font-body-medium-font-size)' }}>
+              Are you sure you want to delete "{deleteProduct.name}"? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: 'var(--space-12)', justifyContent: 'center' }}>
+              <button
+                style={{
+                  padding: 'var(--space-8) var(--space-16)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-outline-variant)',
+                  background: 'none',
+                  color: 'var(--color-on-surface)',
+                  cursor: 'pointer',
+                  fontSize: 'var(--font-body-medium-font-size)',
+                  fontFamily: 'inherit',
+                }}
+                onClick={() => { setDeleteProduct(null); setDeleting(false); }}
+              >
+                Cancel
+              </button>
+              <button
+                style={{
+                  padding: 'var(--space-8) var(--space-16)',
+                  borderRadius: 'var(--radius-md)',
+                  border: 'none',
+                  backgroundColor: 'var(--color-error)',
+                  color: 'var(--color-on-error)',
+                  cursor: 'pointer',
+                  fontSize: 'var(--font-body-medium-font-size)',
+                  fontFamily: 'inherit',
+                  fontWeight: 600,
+                }}
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Auto-dismiss toast */}
+      <div
+        style={{
+          position: 'fixed', top: 'var(--space-16)', left: '50%', transform: 'translateX(-50%)', zIndex: 400,
+          display: toastVisible ? 'flex' : 'none',
+          alignItems: 'center',
+          gap: 'var(--space-12)',
+          backgroundColor: 'var(--color-surface-container-high)',
+          border: '1px solid var(--color-outline-variant)',
+          borderRadius: 'var(--radius-md)',
+          padding: 'var(--space-12) var(--space-16)',
+          fontSize: 'var(--font-body-medium-font-size)',
+          fontWeight: 500,
+          color: 'var(--color-on-surface)',
+          boxShadow: 'var(--elevation-3)',
+          whiteSpace: 'nowrap',
+          animation: 'toastSlideDown 0.3s ease',
+        }}
+      >
+        <span>{toastMsg}</span>
+        {deletedData && (
+          <button
+            onClick={handleUndo}
+            disabled={undoing}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--color-primary)',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: 'inherit',
+              fontFamily: 'inherit',
+              padding: 0,
+            }}
+          >
+            {undoing ? 'Undoing...' : 'Undo'}
+          </button>
+        )}
+      </div>
     </div>
   );
 };

@@ -135,3 +135,52 @@ export async function updateProductAction(productId: string, formData: FormData)
     return { ok: false, error: { message: 'Something went wrong. Please try again later.' } };
   }
 }
+
+export async function deleteProductAction(productId: string) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return { ok: false, error: { message: 'Unauthorized' } };
+    }
+
+    const userId = (session.user as any).id;
+    const existing = await prisma.product.findUnique({ where: { id: productId } });
+    if (!existing || existing.userId !== userId) {
+      return { ok: false, error: { message: 'Product not found' } };
+    }
+
+    await prisma.product.delete({ where: { id: productId } });
+
+    revalidatePath('/products');
+    return { ok: true, data: { name: existing.name, description: existing.description, price: existing.price, imageUrl: existing.imageUrl, uniqueSlug: existing.uniqueSlug } };
+  } catch (error: any) {
+    console.error('Failed to delete product:', error);
+    return { ok: false, error: { message: 'Something went wrong. Please try again later.' } };
+  }
+}
+
+export async function undeleteProductAction(productData: { name: string; description: string; price: number; imageUrl: string; uniqueSlug: string }) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return { ok: false, error: { message: 'Unauthorized' } };
+    }
+
+    await prisma.product.create({
+      data: {
+        userId: (session.user as any).id,
+        name: productData.name,
+        description: productData.description,
+        price: productData.price,
+        imageUrl: productData.imageUrl,
+        uniqueSlug: productData.uniqueSlug,
+      },
+    });
+
+    revalidatePath('/products');
+    return { ok: true };
+  } catch (error: any) {
+    console.error('Failed to undelete product:', error);
+    return { ok: false, error: { message: 'Something went wrong.' } };
+  }
+}

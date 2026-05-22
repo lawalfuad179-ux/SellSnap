@@ -10,6 +10,29 @@
   color: var(--color-on-background);
 }
 
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 var(--space-16);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-label-large-font-family);
+  font-weight: var(--font-label-large-font-weight);
+  font-size: var(--font-label-large-font-size);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.addBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-3);
+}
+
 .toolbar {
   display: flex;
   gap: var(--space-12);
