@@ -1,29 +1,54 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { verifyTransaction, isMockMode } from '@/lib/flutterwave';
+import { orderRateLimiter } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
+
+async function log(orderId: string | null, event: string, details: string) {
+  try {
+    await prisma.paymentLog.create({ data: { orderId, event, details } });
+  } catch {}
+}
 
 export async function POST(request: Request) {
   try {
-    const { orderId, transactionRef, flutterwaveStatus } = await request.json();
-
-    if (!orderId) {
-      return NextResponse.json({ ok: false, error: 'Missing order ID' }, { status: 400 });
+    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    if (!await orderRateLimiter.check(ip)) {
+      return NextResponse.json(
+        { ok: false, error: 'Too many requests' },
+        { status: 429 }
+      );
     }
 
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    const { txRef, flutterwaveTxId } = await request.json();
+
+    if (!txRef) {
+      return NextResponse.json({ ok: false, error: 'Missing transaction reference' }, { status: 400 });
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { transactionReference: txRef },
+    });
+
     if (!order) {
       return NextResponse.json({ ok: false, error: 'Order not found' }, { status: 404 });
     }
 
+    // Already processed by webhook
     if (order.status === 'paid') {
       return NextResponse.json({ ok: true });
     }
 
     if (order.status === 'failed') {
-      return NextResponse.json({ ok: false, error: 'Order already marked as failed' });
+      return NextResponse.json({ ok: false, error: 'Payment failed' });
     }
 
-    if (!process.env.FLUTTERWAVE_SECRET_KEY || process.env.FLUTTERWAVE_SECRET_KEY.endsWith('xxx')) {
-      const product = await prisma.product.findUnique({ where: { id: order.productId }, select: { userId: true, name: true } });
+    // Mock mode — local dev only
+    if (isMockMode()) {
+      const product = await prisma.product.findUnique({
+        where: { id: order.productId },
+        select: { userId: true, name: true },
+      });
 
       await prisma.$transaction([
         prisma.payment.create({
@@ -38,26 +63,59 @@ export async function POST(request: Request) {
           where: { id: order.id },
           data: { status: 'paid' },
         }),
-        ...(product ? [prisma.notification.create({
-          data: {
-            userId: product.userId,
-            title: 'New Order',
-            message: `Someone purchased "${product.name}"`,
-          },
-        })] : []),
+        ...(product
+          ? [
+              prisma.notification.create({
+                data: {
+                  userId: product.userId,
+                  title: 'New Order',
+                  message: `Someone purchased "${product.name}"`,
+                },
+              }),
+            ]
+          : []),
       ]);
 
+      await log(order.id, 'redirect_confirmed', 'Mock mode — payment processed');
       return NextResponse.json({ ok: true });
     }
 
-    if (flutterwaveStatus === 'successful' || flutterwaveStatus === 'completed') {
-      const product = await prisma.product.findUnique({ where: { id: order.productId }, select: { userId: true, name: true } });
+    // Production mode — verify with Flutterwave API, then process.
+    if (flutterwaveTxId) {
+      try {
+        const verifiedTx = await verifyTransaction(flutterwaveTxId);
+        if (verifiedTx.status !== 'successful') {
+          await log(order.id, 'verification_failed', `Tx status: ${verifiedTx.status}`);
+          return NextResponse.json({ ok: false, error: 'Transaction not successful' });
+        }
+        if (verifiedTx.tx_ref !== order.transactionReference) {
+          await log(order.id, 'verification_failed', `TxRef mismatch`);
+          return NextResponse.json({ ok: false, error: 'Transaction reference mismatch' });
+        }
+        const amountInKobo = Math.round(verifiedTx.amount * 100);
+        if (order.amount > amountInKobo) {
+          await log(order.id, 'amount_mismatch', `Expected >= ${order.amount}, got ${amountInKobo}`);
+          return NextResponse.json({ ok: false, error: 'Amount less than product price' });
+        }
+        if (amountInKobo > order.amount) {
+          await log(order.id, 'amount_mismatch', `Overpayment: paid ${amountInKobo}, expected ${order.amount}`);
+          logger.warn('OrderConfirm', 'Overpayment detected', { orderId: order.id, expected: order.amount, paid: amountInKobo });
+        }
+      } catch {
+        await log(order.id, 'verification_failed', 'verifyTransaction threw');
+        return NextResponse.json({ ok: false, error: 'Payment verification failed' });
+      }
+
+      const product = await prisma.product.findUnique({
+        where: { id: order.productId },
+        select: { userId: true, name: true },
+      });
 
       await prisma.$transaction([
         prisma.payment.create({
           data: {
             orderId: order.id,
-            gatewayReference: transactionRef || order.transactionReference,
+            gatewayReference: flutterwaveTxId,
             status: 'successful',
             paidAt: new Date(),
           },
@@ -66,23 +124,29 @@ export async function POST(request: Request) {
           where: { id: order.id },
           data: { status: 'paid' },
         }),
-        ...(product ? [prisma.notification.create({
-          data: {
-            userId: product.userId,
-            title: 'New Order',
-            message: `Someone purchased "${product.name}"`,
-          },
-        })] : []),
+        ...(product
+          ? [
+              prisma.notification.create({
+                data: {
+                  userId: product.userId,
+                  title: 'New Order',
+                  message: `Someone purchased "${product.name}"`,
+                },
+              }),
+            ]
+          : []),
       ]);
 
+      await log(order.id, 'redirect_confirmed', `Verified via Flutterwave API. TxID: ${flutterwaveTxId}`);
       return NextResponse.json({ ok: true });
     }
 
-    return NextResponse.json({ ok: false, error: 'Payment not confirmed' });
+    // Webhook hasn't arrived yet — keep polling
+    await log(order.id, 'redirect_confirmed', 'Webhook not yet arrived — polling');
+    return NextResponse.json({ ok: false, pending: true, error: 'Awaiting webhook confirmation' });
   } catch (error: any) {
-    console.error('Order confirmation error:', error);
+    logger.error('OrderConfirm', 'Confirmation error', { error: error?.message });
 
-    // P2002 = unique constraint — idempotent, treat as success
     if (error.code === 'P2002') {
       return NextResponse.json({ ok: true });
     }

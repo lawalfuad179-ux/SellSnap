@@ -1,5 +1,11 @@
 import crypto from 'crypto';
 
+export function isMockMode(): boolean {
+  if (process.env.NODE_ENV === 'production') return false;
+  const key = process.env.FLUTTERWAVE_SECRET_KEY;
+  return !key || key.endsWith('xxx');
+}
+
 const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY;
 
 export async function initializePayment(data: {
@@ -16,8 +22,7 @@ export async function initializePayment(data: {
     logo?: string;
   };
 }) {
-  if (!FLUTTERWAVE_SECRET_KEY || FLUTTERWAVE_SECRET_KEY.endsWith('xxx')) {
-    console.log('[Flutterwave] No valid secret key configured — using mock mode');
+  if (isMockMode()) {
     const url = new URL(data.redirect_url);
     url.searchParams.set('mock', 'true');
     return { link: url.toString(), status: 'mock' };
@@ -35,15 +40,15 @@ export async function initializePayment(data: {
   const json = await response.json();
   
   if (json.status !== 'success') {
-    throw new Error(json.message || 'Payment initialization failed');
+    throw new Error('Payment initialization failed');
   }
 
   return json.data;
 }
 
 export async function verifyTransaction(transactionId: string) {
-  if (!FLUTTERWAVE_SECRET_KEY) {
-    return { status: 'mock', tx_ref: transactionId, amount: 0, currency: 'NGN', created_at: new Date().toISOString() };
+  if (isMockMode()) {
+    return { status: 'successful', tx_ref: transactionId, amount: 0, currency: 'NGN', created_at: new Date().toISOString() };
   }
 
   const response = await fetch(`https://api.flutterwave.com/v3/transactions/${transactionId}/verify`, {
@@ -57,18 +62,19 @@ export async function verifyTransaction(transactionId: string) {
   const json = await response.json();
 
   if (json.status !== 'success') {
-    throw new Error(json.message || 'Transaction verification failed');
+    throw new Error('Transaction verification failed');
   }
 
   return json.data;
 }
 
-export function verifyWebhookSignature(signature: string, payload: string) {
+export function verifyWebhookSignature(signature: string): boolean {
   const secretHash = process.env.FLUTTERWAVE_SECRET_HASH;
-  if (!secretHash) {
-    return false;
-  }
+  if (!secretHash) return false;
 
-  // Flutterwave just uses a direct string comparison for the secret hash sent in the header
-  return signature === secretHash;
+  if (signature.length !== secretHash.length) return false;
+
+  const sigBuf = Buffer.from(signature);
+  const hashBuf = Buffer.from(secretHash);
+  return crypto.timingSafeEqual(sigBuf, hashBuf);
 }

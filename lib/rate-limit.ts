@@ -1,5 +1,6 @@
+import prisma from '@/lib/db';
+
 export class RateLimiter {
-  private cache = new Map<string, { count: number; lastReset: number }>();
   private limit: number;
   private windowMs: number;
 
@@ -8,28 +9,44 @@ export class RateLimiter {
     this.windowMs = windowMs;
   }
 
-  check(ip: string): boolean {
-    const now = Date.now();
-    const record = this.cache.get(ip);
+  async check(key: string): Promise<boolean> {
+    const now = new Date();
+    const windowStart = new Date(now.getTime() - this.windowMs);
 
-    if (!record) {
-      this.cache.set(ip, { count: 1, lastReset: now });
+    // Clean up expired entries periodically
+    await prisma.rateLimit.deleteMany({
+      where: { key, expiresAt: { lt: now } },
+    });
+
+    // Count existing requests in the window
+    const existing = await prisma.rateLimit.findFirst({
+      where: { key, expiresAt: { gte: windowStart } },
+      orderBy: { expiresAt: 'desc' },
+    });
+
+    if (!existing) {
+      await prisma.rateLimit.create({
+        data: {
+          key,
+          count: 1,
+          expiresAt: new Date(now.getTime() + this.windowMs),
+        },
+      });
       return true;
     }
 
-    if (now - record.lastReset > this.windowMs) {
-      this.cache.set(ip, { count: 1, lastReset: now });
-      return true;
-    }
-
-    if (record.count >= this.limit) {
+    if (existing.count >= this.limit) {
       return false;
     }
 
-    record.count += 1;
+    await prisma.rateLimit.update({
+      where: { id: existing.id },
+      data: { count: existing.count + 1 },
+    });
+
     return true;
   }
 }
 
-export const authRateLimiter = new RateLimiter({ limit: 5, windowMs: 60000 }); // 5 requests per minute
-export const orderRateLimiter = new RateLimiter({ limit: 10, windowMs: 60000 }); // 10 requests per minute
+export const authRateLimiter = new RateLimiter({ limit: 5, windowMs: 60000 });
+export const orderRateLimiter = new RateLimiter({ limit: 10, windowMs: 60000 });

@@ -1,19 +1,21 @@
+import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { z } from 'zod';
 import { initializePayment } from '@/lib/flutterwave';
 import { orderRateLimiter } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 const orderCreateSchema = z.object({
   productId: z.string(),
-  amount: z.number().int(), // amount in kobo
-  buyerEmail: z.string().email().optional().or(z.literal('')),
+  buyerName: z.string().min(1),
+  buyerEmail: z.string().email(),
 });
 
 export async function POST(request: Request) {
   try {
     const ip = request.headers.get('x-forwarded-for') || 'unknown';
-    if (!orderRateLimiter.check(ip)) {
+    if (!await orderRateLimiter.check(ip)) {
       return NextResponse.json(
         { ok: false, error: { message: 'Too many requests. Please try again later.' } },
         { status: 429 }
@@ -30,7 +32,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { productId, amount, buyerEmail } = result.data;
+    const { productId, buyerName, buyerEmail } = result.data;
 
     const product = await prisma.product.findUnique({
       where: { id: productId },
@@ -44,35 +46,81 @@ export async function POST(request: Request) {
       );
     }
 
-    if (product.price !== amount) {
+    if (!product.isActive) {
       return NextResponse.json(
-        { ok: false, error: { message: 'Amount mismatch' } },
-        { status: 400 }
+        { ok: false, error: { message: 'Product is no longer available' } },
+        { status: 410 }
       );
     }
 
-    const txRef = `tx-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+    // Deduplication: check for an existing pending order for the same product + buyer
+    const existingPending = await prisma.order.findFirst({
+      where: { productId, buyerEmail, status: 'pending' },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingPending) {
+      // Reuse the existing order's payment flow
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const existingRedirectUrl = `${appUrl}/payment-status?txRef=${existingPending.transactionReference}&productSlug=${product.uniqueSlug}`;
+
+      const paymentData = await initializePayment({
+        tx_ref: existingPending.transactionReference,
+        amount: product.price / 100,
+        currency: 'NGN',
+        redirect_url: existingRedirectUrl,
+        customer: {
+          email: buyerEmail,
+          name: buyerName,
+        },
+        customizations: {
+          title: `${product.name} - ${product.user.businessName}`,
+          logo: product.imageUrl,
+        },
+      });
+
+      await prisma.paymentLog.create({
+        data: {
+          orderId: existingPending.id,
+          event: 'order_created',
+          details: `Deduplicated — reused existing order ${existingPending.id}`,
+        },
+      });
+
+      return NextResponse.json({ ok: true, data: { checkoutUrl: paymentData.link } });
+    }
+
+    const txRef = crypto.randomUUID();
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     const order = await prisma.order.create({
       data: {
         productId,
-        amount,
-        buyerEmail: buyerEmail || null,
+        amount: product.price,
+        buyerEmail,
         transactionReference: txRef,
         status: 'pending',
       },
     });
 
-    const redirectUrl = `${appUrl}/payment-status?orderId=${order.id}&productSlug=${product.uniqueSlug}`;
+    await prisma.paymentLog.create({
+      data: {
+        orderId: order.id,
+        event: 'order_created',
+        details: `Amount: ${product.price} kobo, Product: ${product.name}`,
+      },
+    });
+
+    const redirectUrl = `${appUrl}/payment-status?txRef=${txRef}&productSlug=${product.uniqueSlug}`;
 
     const paymentData = await initializePayment({
       tx_ref: txRef,
-      amount: amount / 100,
+      amount: product.price / 100,
       currency: 'NGN',
       redirect_url: redirectUrl,
       customer: {
-        email: buyerEmail || 'guest@sellsnap.com',
+        email: buyerEmail,
+        name: buyerName,
       },
       customizations: {
         title: `${product.name} - ${product.user.businessName}`,
@@ -80,13 +128,21 @@ export async function POST(request: Request) {
       },
     });
 
+    await prisma.paymentLog.create({
+      data: {
+        orderId: order.id,
+        event: 'payment_init',
+        details: `Mode: ${paymentData.status || 'live'}, Redirect: ${paymentData.link}`,
+      },
+    });
+
     const checkoutUrl = paymentData.link;
 
     return NextResponse.json({ ok: true, data: { checkoutUrl } });
   } catch (error: any) {
-    console.error('Order creation error:', error?.message || error, error?.stack || '');
+    logger.error('OrderCreate', 'Failed to create order', { error: error?.message });
     return NextResponse.json(
-      { ok: false, error: { message: error?.message || 'Failed to create order' } },
+      { ok: false, error: { message: 'Failed to create order' } },
       { status: 500 }
     );
   }

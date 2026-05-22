@@ -84,19 +84,15 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: var(--space-32);
     padding: var(--space-32);
-    align-items: start;
   }
 }
 
 .imageColumn {
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
 }
 
 .imageWrapper {
-  width: 100%;
-  aspect-ratio: 1 / 1;
+  flex: 1;
   overflow: hidden;
   position: relative;
   border-radius: var(--radius-md);

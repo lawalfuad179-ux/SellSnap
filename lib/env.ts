@@ -1,10 +1,12 @@
 import { z } from 'zod';
 
+const isProd = process.env.NODE_ENV === 'production';
+
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
-  FLUTTERWAVE_PUBLIC_KEY: z.string().optional(),
-  FLUTTERWAVE_SECRET_KEY: z.string().optional(),
-  FLUTTERWAVE_SECRET_HASH: z.string().optional(),
+  FLUTTERWAVE_PUBLIC_KEY: isProd ? z.string().min(1) : z.string().optional(),
+  FLUTTERWAVE_SECRET_KEY: isProd ? z.string().min(1) : z.string().optional(),
+  FLUTTERWAVE_SECRET_HASH: isProd ? z.string().min(1) : z.string().optional(),
   NEXTAUTH_SECRET: z.string().min(1),
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
   RESEND_API_KEY: z.string().optional(),

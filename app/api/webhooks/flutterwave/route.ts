@@ -2,28 +2,37 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { verifyTransaction, verifyWebhookSignature } from '@/lib/flutterwave';
 import { sendPaymentConfirmationEmail } from '@/lib/email';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: Request) {
   try {
     const signature = request.headers.get('verif-hash');
     const bodyText = await request.text();
 
-    if (!signature || !verifyWebhookSignature(signature, bodyText)) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    if (!signature || !verifyWebhookSignature(signature)) {
+      return new NextResponse('OK', { status: 200 });
     }
 
     const payload = JSON.parse(bodyText);
+    logger.info('Webhook', 'Webhook received', { event: payload.event });
 
     if (payload.event === 'charge.completed' && payload.data) {
       const txId = payload.data.id.toString();
-      
-      // Verify with Flutterwave directly to ensure payload isn't spoofed
+
+      await prisma.paymentLog.create({
+        data: { orderId: null, event: 'webhook_received', details: `TxID: ${txId}` },
+      });
+
       const verifiedTx = await verifyTransaction(txId);
-      
+
       if (verifiedTx.status === 'successful') {
         const txRef = verifiedTx.tx_ref;
-        // Amount verified is in Naira, we need kobo to compare with db
-        const amountInKobo = verifiedTx.amount * 100;
+
+        await prisma.paymentLog.create({
+          data: { orderId: null, event: 'webhook_verified', details: `TxID: ${txId}, TxRef: ${txRef}` },
+        });
+
+        const amountInKobo = Math.round(verifiedTx.amount * 100);
 
         const order = await prisma.order.findUnique({
           where: { transactionReference: txRef },
@@ -31,13 +40,31 @@ export async function POST(request: Request) {
         });
 
         if (!order) {
-          console.error(`Order not found for txRef: ${txRef}`);
-          return new NextResponse('Order not found', { status: 404 });
+          await prisma.paymentLog.create({
+            data: { orderId: null, event: 'verification_failed', details: `Order not found for txRef: ${txRef}` },
+          });
+          logger.warn('Webhook', 'Order not found', { txRef });
+          return new NextResponse('OK', { status: 200 });
         }
 
-        if (order.amount !== amountInKobo || verifiedTx.currency !== 'NGN') {
-          console.error(`Amount or currency mismatch. Expected ${order.amount} kobo NGN, got ${amountInKobo} ${verifiedTx.currency}`);
-          return new NextResponse('Invalid amount or currency', { status: 400 });
+        if (order.amount > amountInKobo || verifiedTx.currency !== order.currency) {
+          await prisma.paymentLog.create({
+            data: { orderId: order.id, event: 'amount_mismatch', details: `Expected >= ${order.amount} ${order.currency}, got ${amountInKobo} ${verifiedTx.currency}` },
+          });
+          logger.warn('Webhook', 'Amount or currency mismatch', {
+            orderId: order.id,
+            expected: `${order.amount} ${order.currency}`,
+            got: `${amountInKobo} ${verifiedTx.currency}`,
+          });
+          await prisma.order.update({
+            where: { id: order.id },
+            data: { status: 'failed' },
+          });
+          return new NextResponse('OK', { status: 200 });
+        }
+
+        if (amountInKobo > order.amount) {
+          logger.warn('Webhook', 'Overpayment detected', { orderId: order.id, expected: order.amount, paid: amountInKobo });
         }
 
         try {
@@ -54,9 +81,26 @@ export async function POST(request: Request) {
               where: { id: order.id },
               data: { status: 'paid' },
             }),
+            ...(order.product
+              ? [
+                  prisma.notification.create({
+                    data: {
+                      userId: order.product.userId,
+                      title: 'New Order',
+                      message: `Someone purchased "${order.product.name}"`,
+                    },
+                  }),
+                ]
+              : []),
           ]);
 
+          await prisma.paymentLog.create({
+            data: { orderId: order.id, event: 'webhook_processed', details: `Payment confirmed. Amount: ${amountInKobo} ${order.currency}` },
+          });
+
           const seller = order.product.user;
+          logger.info('Webhook', 'Payment processed', { orderId: order.id, userId: seller.id });
+
           await sendPaymentConfirmationEmail({
             sellerEmail: seller.email,
             sellerName: seller.name,
@@ -66,8 +110,7 @@ export async function POST(request: Request) {
           });
         } catch (e: any) {
           if (e.code === 'P2002') {
-            // Unique constraint failed, meaning payment was already processed (Idempotency)
-            return new NextResponse('Already processed', { status: 200 });
+            return new NextResponse('OK', { status: 200 });
           }
           throw e;
         }
@@ -76,7 +119,7 @@ export async function POST(request: Request) {
 
     return new NextResponse('OK', { status: 200 });
   } catch (error: any) {
-    console.error('Webhook processing error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    logger.error('Webhook', 'Processing error', { error: error?.message });
+    return new NextResponse('OK', { status: 200 });
   }
 }

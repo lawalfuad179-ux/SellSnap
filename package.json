@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "vercel-build": "cp prisma/schema.postgres.prisma prisma/schema.prisma && prisma generate && prisma db push && next build"
+    "vercel-build": "cp prisma/schema.postgres.prisma prisma/schema.prisma && prisma generate && prisma db push && next build",
+    "secret": "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

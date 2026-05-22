@@ -35,16 +35,59 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'Set up a withdrawal account first' }, { status: 400 });
   }
 
-  const withdrawal = await prisma.withdrawal.create({
-    data: {
-      userId,
-      amount: Math.round(amount * 100),
-      scheduledAt: new Date(scheduledAt),
-      status: 'scheduled',
-    },
-  });
+  // Calculate available balance
+  const [revenue, existingWithdrawals] = await Promise.all([
+    prisma.order.aggregate({
+      where: { product: { userId }, status: 'paid' },
+      _sum: { amount: true },
+    }),
+    prisma.withdrawal.aggregate({
+      where: { userId, status: { in: ['scheduled', 'processed'] } },
+      _sum: { amount: true },
+    }),
+  ]);
 
-  return NextResponse.json({ ok: true, data: withdrawal });
+  const requestedAmount = Math.round(amount * 100);
+
+  // Atomic balance check + withdrawal creation inside a serialized transaction
+  try {
+    const withdrawal = await prisma.$transaction(async (tx) => {
+      const [revenue, existingWithdrawals] = await Promise.all([
+        tx.order.aggregate({
+          where: { product: { userId }, status: 'paid' },
+          _sum: { amount: true },
+        }),
+        tx.withdrawal.aggregate({
+          where: { userId, status: { in: ['scheduled', 'processed'] } },
+          _sum: { amount: true },
+        }),
+      ]);
+
+      const totalRevenue = revenue._sum.amount || 0;
+      const totalWithdrawn = existingWithdrawals._sum.amount || 0;
+      const availableBalance = totalRevenue - totalWithdrawn;
+
+      if (requestedAmount > availableBalance) {
+        throw new Error('Insufficient balance');
+      }
+
+      return tx.withdrawal.create({
+        data: {
+          userId,
+          amount: requestedAmount,
+          scheduledAt: new Date(scheduledAt),
+          status: 'scheduled',
+        },
+      });
+    });
+
+    return NextResponse.json({ ok: true, data: withdrawal });
+  } catch (err: any) {
+    if (err.message === 'Insufficient balance') {
+      return NextResponse.json({ ok: false, error: 'Insufficient balance' }, { status: 400 });
+    }
+    throw err;
+  }
 }
 
 export async function DELETE(request: Request) {
