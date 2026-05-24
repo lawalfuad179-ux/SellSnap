@@ -6,6 +6,7 @@ const envSchema = z.object({
   FLUTTERWAVE_SECRET_KEY: z.string().optional(),
   FLUTTERWAVE_SECRET_HASH: z.string().optional(),
   NEXTAUTH_SECRET: z.string().min(1),
+  NEXTAUTH_URL: z.string().url().default('http://localhost:3000'),
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
   EMAIL_PROVIDER: z.enum(['smtp', 'resend']).default('smtp'),
   RESEND_API_KEY: z.string().optional(),
