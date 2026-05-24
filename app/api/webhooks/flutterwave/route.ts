@@ -108,6 +108,7 @@ export async function POST(request: Request) {
               productName: order.product.name,
               amount: order.amount,
               buyerEmail: order.buyerEmail,
+              userId: seller.id,
             })
           ];
 

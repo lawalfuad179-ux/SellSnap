@@ -94,6 +94,7 @@ export async function POST(request: Request) {
             productName: product.name,
             amount: order.amount,
             buyerEmail: order.buyerEmail,
+            userId: product.user.id,
           })
         ];
 
@@ -190,6 +191,7 @@ export async function POST(request: Request) {
             productName: product.name,
             amount: order.amount,
             buyerEmail: order.buyerEmail,
+            userId: product.user.id,
           })
         ];
 

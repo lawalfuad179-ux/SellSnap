@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
+import prisma from '@/lib/db';
 import { logger } from '@/lib/logger';
 
 let transporter: nodemailer.Transporter | null = null;
@@ -78,14 +79,22 @@ export async function sendPaymentConfirmationEmail({
   productName,
   amount,
   buyerEmail,
+  userId,
 }: {
   sellerEmail: string;
   sellerName: string;
   productName: string;
   amount: number;
   buyerEmail: string | null;
+  userId: string;
 }) {
   try {
+    const prefs = await prisma.emailPreference.findUnique({ where: { userId } });
+    if (prefs && !prefs.paymentConfirmation) {
+      logger.info('Email', 'Skipped — user disabled payment confirmation email', { userId });
+      return;
+    }
+
     const formattedAmount = `₦${(amount / 100).toLocaleString()}`;
     const safeName = escapeHtml(sellerName);
     const safeProduct = escapeHtml(productName);

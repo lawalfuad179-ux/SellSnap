@@ -2,11 +2,10 @@
 
 import { useEffect, useState, use, useRef } from 'react';
 import Link from 'next/link';
-import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { MouseTracker } from '@/components/effects/MouseTracker';
-import { PartyPopper, XCircle, Loader2 } from 'lucide-react';
+import { BackLink } from '@/components/ui/BackLink';
+import styles from './PaymentStatus.module.css';
 
 const MAX_RETRIES = 20;
 
@@ -73,96 +72,88 @@ export default function PaymentStatusPage({ searchParams }: Props) {
   }, [txRef, transaction_id]);
 
   return (
-    <div style={{
-      position: 'relative',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      minHeight: '100vh', padding: 'var(--space-16)', backgroundColor: 'var(--color-background)',
-    }}>
-      <MouseTracker />
-      <div style={{ position: 'absolute', top: 'var(--space-16)', right: 'var(--space-16)' }}>
+    <div className={styles.pageContainer}>
+      <div className={styles.topBar}>
+        <BackLink href="/" />
         <ThemeToggle />
       </div>
 
-      <Card style={{ textAlign: 'center', maxWidth: '400px' }}>
+      <main aria-live="polite" aria-label="Payment status">
         {state === 'processing' && (
-          <>
-            <Loader2 size={48} style={{ color: 'var(--color-primary)', marginBottom: 'var(--space-16)', animation: 'spin 1s linear infinite' }} />
-            <h2 style={{ color: 'var(--color-on-surface)', marginBottom: 'var(--space-16)' }}>Confirming Payment...</h2>
-            <p style={{ color: 'var(--color-on-surface-variant)', marginBottom: 'var(--space-24)' }}>
+          <div className={styles.processingCard} role="status">
+            <div className={styles.iconContainer}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={styles.loader} style={{ animation: 'spin 1s linear infinite' }}>
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+            </div>
+            <h1 className={styles.processingHeading}>Confirming Payment...</h1>
+            <p className={styles.processingText}>
               Please wait while we verify your transaction.
             </p>
-          </>
+          </div>
         )}
 
         {state === 'success' && orderData && (
-          <>
-            <div style={{ marginBottom: 'var(--space-20)' }}>
-              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto' }}>
+          <div className={styles.contentCard} role="status" aria-label="Payment successful">
+            <div className={styles.iconContainer}>
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={styles.successIcon} aria-hidden="true">
                 <circle cx="12" cy="12" r="10" />
                 <path d="m9 12 2 2 4-4" />
               </svg>
             </div>
 
-            <h2 style={{ color: '#111827', fontSize: 'var(--font-headline-small-font-size)', fontWeight: 700, margin: '0 0 var(--space-8)' }}>
-              Payment Successful!
-            </h2>
+            <h1 className={styles.statusHeading}>Payment Successful!</h1>
 
-            <p style={{ color: '#374151', fontSize: 'var(--font-body-medium-font-size)', lineHeight: '1.5', margin: '0 0 var(--space-24)' }}>
+            <p className={styles.confirmationText}>
               Thank you for your purchase of <strong>{orderData.productName}</strong> from <strong>{orderData.sellerBusinessName}</strong>.
             </p>
 
-            <div style={{
-              border: '1px solid #e5e7eb',
-              borderRadius: 'var(--radius-md)',
-              padding: 'var(--space-20)',
-              marginBottom: 'var(--space-24)',
-              textAlign: 'left',
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--space-8) 0', borderBottom: '1px solid #f3f4f6' }}>
-                <span style={{ color: '#6b7280', fontSize: 'var(--font-body-medium-font-size)' }}>Amount Paid</span>
-                <span style={{ fontWeight: 700, fontSize: 'var(--font-body-large-font-size)', color: '#111827' }}>
+            <div className={styles.detailsCard}>
+              <div className={`${styles.detailRow} ${styles.detailRowBorder}`}>
+                <span className={styles.detailLabel}>Amount Paid</span>
+                <span className={styles.detailValue}>
                   ₦{(orderData.amount / 100).toLocaleString()}
                 </span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--space-8) 0' }}>
-                <span style={{ color: '#6b7280', fontSize: 'var(--font-body-medium-font-size)' }}>Transaction Ref</span>
-                <span style={{
-                  backgroundColor: '#f3f4f6',
-                  color: '#374151',
-                  fontSize: 'var(--font-label-small-font-size)',
-                  fontWeight: 600,
-                  padding: '4px 12px',
-                  borderRadius: '999px',
-                  fontFamily: 'monospace',
-                }}>
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Transaction Ref</span>
+                <span className={styles.refBadge}>
                   {orderData.transactionReference.slice(0, 8)}...
                 </span>
               </div>
             </div>
 
-            <p style={{ color: '#9ca3af', fontSize: 'var(--font-body-small-font-size)', margin: '0 0 var(--space-24)' }}>
+            <p className={styles.footerNote}>
               A receipt has been sent to your email. The seller will contact you shortly.
             </p>
 
-            <Link href={`/p/${productSlug || ''}`}>
+            <Link href={`/p/${productSlug || ''}`} className={styles.fullWidthLink}>
               <Button fullWidth>Continue</Button>
             </Link>
-          </>
+          </div>
         )}
 
         {state === 'failed' && (
-          <>
-            <XCircle size={48} style={{ color: 'var(--color-error)', marginBottom: 'var(--space-16)' }} />
-            <h2 style={{ color: 'var(--color-error)', marginBottom: 'var(--space-16)' }}>Payment Failed</h2>
-            <p style={{ color: 'var(--color-on-surface-variant)', marginBottom: 'var(--space-12)' }}>
-              {errorMsg}
-            </p>
-            <Link href={`/p/${productSlug || ''}`}>
+          <div className={styles.failedCard} role="alert">
+            <div className={styles.iconContainer}>
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={styles.failedIcon} aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <path d="m15 9-6 6" />
+                <path d="m9 9 6 6" />
+              </svg>
+            </div>
+
+            <h1 className={styles.failedHeading}>Payment Failed</h1>
+
+            <p className={styles.failedText}>{errorMsg}</p>
+
+            <Link href={`/p/${productSlug || ''}`} className={styles.fullWidthLink}>
               <Button fullWidth>Try Again</Button>
             </Link>
-          </>
+          </div>
         )}
-      </Card>
+      </main>
     </div>
   );
 }

@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
-import { ScheduleWithdrawalModal } from '@/components/settings/ScheduleWithdrawalModal';
-import { Pencil, Trash2, Plus } from 'lucide-react';
-import { format } from 'date-fns';
+import { Pencil } from 'lucide-react';
 import styles from './Settings.module.css';
 
 interface BankAccount {
@@ -14,48 +12,47 @@ interface BankAccount {
   accountName: string;
 }
 
-interface Withdrawal {
-  id: string;
-  amount: number;
-  status: string;
-  scheduledAt: string;
-  createdAt: string;
-}
-
 export const SettingsClient = () => {
   const [account, setAccount] = useState<BankAccount | null>(null);
-  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
-  const [revenue, setRevenue] = useState(0);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ bankName: '', accountNumber: '', accountName: '' });
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
-  const [showSchedule, setShowSchedule] = useState(false);
   const [storeEnabled, setStoreEnabled] = useState(true);
   const [notifNewOrder, setNotifNewOrder] = useState(true);
   const [notifPayment, setNotifPayment] = useState(true);
-  const [notifPayout, setNotifPayout] = useState(false);
+  const [notifLoading, setNotifLoading] = useState<string | null>(null);
 
-  const fetchData = async () => {
-    const [acctRes, wdRes] = await Promise.all([
-      fetch('/api/bank-account'),
-      fetch('/api/withdrawals'),
-    ]);
-    const acct = await acctRes.json();
-    const wd = await wdRes.json();
-    if (acct.data) setAccount(acct.data);
-    setWithdrawals(wd.data || []);
-  };
-
-  const fetchRevenue = async () => {
+  const fetchPrefs = async () => {
     try {
-      const res = await fetch('/api/orders/revenue');
-      const json = await res.json();
-      if (json.ok) setRevenue(json.revenue / 100);
+      const res = await fetch('/api/bank-account');
+      const acct = await res.json();
+      if (acct.data) setAccount(acct.data);
+    } catch {}
+    try {
+      const res = await fetch('/api/notifications/preferences');
+      const prefs = await res.json();
+      if (prefs.ok && prefs.data) {
+        setNotifNewOrder(prefs.data.newOrderAlerts);
+        setNotifPayment(prefs.data.paymentConfirmation);
+      }
     } catch {}
   };
 
-  useEffect(() => { fetchData(); fetchRevenue(); }, []);
+  const toggleNotif = async (key: string, value: boolean, setter: (v: boolean) => void) => {
+    setter(value);
+    setNotifLoading(key);
+    try {
+      await fetch('/api/notifications/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [key]: value }),
+      });
+    } catch {}
+    setNotifLoading(null);
+  };
+
+  useEffect(() => { fetchPrefs(); }, []);
 
   const startEdit = () => {
     if (account) setForm({ bankName: account.bankName, accountNumber: account.accountNumber, accountName: account.accountName });
@@ -92,37 +89,15 @@ export const SettingsClient = () => {
     }
   };
 
-  const handleSchedule = async (amount: number, scheduledAt: string) => {
-    const res = await fetch('/api/withdrawals', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount, scheduledAt }),
-    });
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error);
-    await fetchData();
-  };
-
-  const deleteWithdrawal = async (id: string) => {
-    await fetch('/api/withdrawals', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
-    await fetchData();
-  };
-
-  const scheduledWithdrawals = withdrawals.filter((w) => w.status === 'scheduled');
-
-  const Toggle = ({ on, setOn, label }: { on: boolean; setOn: (v: boolean) => void; label: string }) => (
-    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontSize: 'var(--font-body-medium-font-size)', color: 'var(--color-on-surface)' }}>
+  const Toggle = ({ on, setOn, label, loading }: { on: boolean; setOn: (v: boolean) => void | Promise<void>; label: string; loading?: boolean }) => (
+    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: loading ? 'wait' : 'pointer', fontSize: 'var(--font-body-medium-font-size)', color: 'var(--color-on-surface)', opacity: loading ? 0.6 : 1 }}>
       {label}
       <div
-        onClick={() => setOn(!on)}
+        onClick={() => { if (!loading) setOn(!on); }}
         style={{
           width: 40, height: 22, borderRadius: 11, padding: 2,
           backgroundColor: on ? 'var(--color-primary)' : 'var(--color-outline-variant)',
-          transition: 'background-color 0.2s', cursor: 'pointer',
+          transition: 'background-color 0.2s', cursor: loading ? 'wait' : 'pointer',
         }}
       >
         <div style={{
@@ -148,11 +123,10 @@ export const SettingsClient = () => {
       {/* Email Notifications */}
       <Card className={styles.group}>
         <h2 className={styles.groupTitle}>Email Notifications</h2>
-        <p className={styles.groupDesc}>Receive email alerts for new orders and payouts.</p>
+        <p className={styles.groupDesc}>Receive email alerts for new orders and payments.</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-12)' }}>
-          <Toggle on={notifNewOrder} setOn={setNotifNewOrder} label="New order alerts" />
-          <Toggle on={notifPayment} setOn={setNotifPayment} label="Payment confirmation" />
-          <Toggle on={notifPayout} setOn={setNotifPayout} label="Payout notifications" />
+          <Toggle on={notifNewOrder} setOn={(v) => toggleNotif('newOrderAlerts', v, setNotifNewOrder)} label="New order alerts" loading={notifLoading === 'newOrderAlerts'} />
+          <Toggle on={notifPayment} setOn={(v) => toggleNotif('paymentConfirmation', v, setNotifPayment)} label="Payment confirmation" loading={notifLoading === 'paymentConfirmation'} />
         </div>
       </Card>
 
@@ -190,49 +164,6 @@ export const SettingsClient = () => {
         )}
       </Card>
 
-      {/* Payout Schedule */}
-      <Card className={styles.group}>
-        <div className={styles.groupHeader}>
-          <h2 className={styles.groupTitle}>Payout Schedule</h2>
-        </div>
-
-        {account ? (
-          <>
-            <p className={styles.groupDesc}>Earnings are automatically sent to your withdrawal account every Monday.</p>
-            <button className={styles.scheduleCta} onClick={() => setShowSchedule(true)}>
-              <Plus size={16} />
-              Schedule Withdrawal
-            </button>
-          </>
-        ) : (
-          <p className={styles.errorText}>Set up a withdrawal account before scheduling payouts.</p>
-        )}
-
-        {scheduledWithdrawals.length > 0 && (
-          <div style={{ marginTop: 'var(--space-20)' }}>
-            <p className={styles.scheduledLabel}>Scheduled Withdrawals</p>
-            {scheduledWithdrawals.map((w) => (
-              <div key={w.id} className={styles.withdrawalRow}>
-                <div>
-                  <p className={styles.wdAmount}>₦{(w.amount / 100).toLocaleString()}</p>
-                  <p className={styles.wdDate}>{format(new Date(w.scheduledAt), 'MMM d, yyyy · h:mm a')}</p>
-                </div>
-                <button className={styles.wdAction} onClick={() => deleteWithdrawal(w.id)} title="Cancel">
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {showSchedule && (
-        <ScheduleWithdrawalModal
-          availableBalance={revenue}
-          onClose={() => setShowSchedule(false)}
-          onSchedule={handleSchedule}
-        />
-      )}
     </div>
   );
 

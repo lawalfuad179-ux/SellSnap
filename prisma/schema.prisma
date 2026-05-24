@@ -19,8 +19,8 @@ model User {
   createdAt    DateTime         @default(now())
   products     Product[]
   notifications Notification[]
+  emailPreference EmailPreference?
   bankAccount  BankAccount?
-  withdrawals  Withdrawal[]
 }
 
 model BankAccount {
@@ -31,17 +31,6 @@ model BankAccount {
   accountName     String
   createdAt       DateTime  @default(now())
   user            User      @relation(fields: [userId], references: [id])
-}
-
-model Withdrawal {
-  id          String   @id @default(cuid())
-  userId      String
-  amount      Int      // in kobo
-  status      String   @default("scheduled") // scheduled | processed | cancelled
-  scheduledAt DateTime
-  processedAt DateTime?
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id])
 }
 
 model Product {
@@ -56,6 +45,14 @@ model Product {
   createdAt   DateTime  @default(now())
   user        User      @relation(fields: [userId], references: [id])
   orders      Order[]
+}
+
+model EmailPreference {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  newOrderAlerts  Boolean @default(true)
+  paymentConfirmation Boolean @default(true)
+  user            User    @relation(fields: [userId], references: [id])
 }
 
 enum OrderStatus {
