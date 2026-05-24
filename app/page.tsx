@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { MouseTracker } from '@/components/effects/MouseTracker';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import './globals.css';
@@ -11,7 +12,9 @@ export default function LandingPage() {
       </div>
       <MouseTracker />
       <main className="landing-content">
-        <h1 className="landing-logo">SellSnap</h1>
+        <h1 className="landing-logo">
+          <Image src="/logo.png" alt="SellSnap" width={212} height={54} priority style={{ width: 'clamp(140px, 22vw, 260px)', height: 'auto' }} />
+        </h1>
         <h2 className="landing-title">Sell anything in seconds<br />using just a link.</h2>
         <p className="landing-subtitle">
           Sell instantly, Share anywhere.

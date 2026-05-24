@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { verifyTransaction, verifyWebhookSignature } from '@/lib/flutterwave';
-import { sendPaymentConfirmationEmail } from '@/lib/email';
+import { sendPaymentConfirmationEmail, sendBuyerReceiptEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: Request) {
@@ -101,12 +101,30 @@ export async function POST(request: Request) {
           const seller = order.product.user;
           logger.info('Webhook', 'Payment processed', { orderId: order.id, userId: seller.id });
 
-          await sendPaymentConfirmationEmail({
-            sellerEmail: seller.email,
-            sellerName: seller.name,
-            productName: order.product.name,
-            amount: order.amount,
-            buyerEmail: order.buyerEmail,
+          const emailPromises = [
+            sendPaymentConfirmationEmail({
+              sellerEmail: seller.email,
+              sellerName: seller.name,
+              productName: order.product.name,
+              amount: order.amount,
+              buyerEmail: order.buyerEmail,
+            })
+          ];
+
+          if (order.buyerEmail) {
+            emailPromises.push(
+              sendBuyerReceiptEmail({
+                buyerEmail: order.buyerEmail,
+                sellerBusinessName: seller.businessName,
+                productName: order.product.name,
+                amount: order.amount,
+              })
+            );
+          }
+
+          // Fire and forget emails, don't block the webhook response
+          Promise.allSettled(emailPromises).catch((e) => {
+             logger.error('Webhook', 'Email dispatch error', { error: (e as Error)?.message });
           });
         } catch (e: any) {
           if (e.code === 'P2002') {
@@ -114,6 +132,18 @@ export async function POST(request: Request) {
           }
           throw e;
         }
+      }
+    } else if (payload.event === 'charge.failed' && payload.data) {
+      const txRef = payload.data.tx_ref;
+      if (txRef) {
+        await prisma.order.updateMany({
+          where: { transactionReference: txRef, status: 'pending' },
+          data: { status: 'failed' },
+        });
+        await prisma.paymentLog.create({
+          data: { orderId: null, event: 'webhook_charge_failed', details: `TxRef: ${txRef}` },
+        });
+        logger.info('Webhook', 'Charge failed, order marked failed', { txRef });
       }
     }
 

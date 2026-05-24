@@ -41,9 +41,8 @@
 }
 
 .brandName {
-  font-size: var(--font-title-large-font-size);
-  font-weight: 700;
-  color: var(--color-primary);
+  width: clamp(70px, 18vw, 110px);
+  height: auto;
 }
 
 .productPreview {

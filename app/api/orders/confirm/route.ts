@@ -39,8 +39,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    if (order.status === 'failed') {
-      return NextResponse.json({ ok: false, error: 'Payment failed' });
+    if (order.status === 'failed' || order.status === 'expired') {
+      return NextResponse.json({ ok: false, error: `Order ${order.status}` });
     }
 
     // Mock mode — local dev only

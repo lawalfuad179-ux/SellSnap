@@ -72,9 +72,8 @@ export function verifyWebhookSignature(signature: string): boolean {
   const secretHash = process.env.FLUTTERWAVE_SECRET_HASH;
   if (!secretHash) return false;
 
-  if (signature.length !== secretHash.length) return false;
-
-  const sigBuf = Buffer.from(signature);
-  const hashBuf = Buffer.from(secretHash);
+  const maxLen = Math.max(signature.length, secretHash.length);
+  const sigBuf = Buffer.alloc(maxLen, signature, 'utf-8');
+  const hashBuf = Buffer.alloc(maxLen, secretHash, 'utf-8');
   return crypto.timingSafeEqual(sigBuf, hashBuf);
 }

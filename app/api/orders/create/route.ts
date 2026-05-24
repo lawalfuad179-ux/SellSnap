@@ -54,40 +54,56 @@ export async function POST(request: Request) {
     }
 
     // Deduplication: check for an existing pending order for the same product + buyer
+    const STALE_ORDER_MS = 30 * 60 * 1000;
     const existingPending = await prisma.order.findFirst({
       where: { productId, buyerEmail, status: 'pending' },
       orderBy: { createdAt: 'desc' },
     });
 
     if (existingPending) {
-      // Reuse the existing order's payment flow
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      const existingRedirectUrl = `${appUrl}/payment-status?txRef=${existingPending.transactionReference}&productSlug=${product.uniqueSlug}`;
+      const isStale = Date.now() - existingPending.createdAt.getTime() > STALE_ORDER_MS;
 
-      const paymentData = await initializePayment({
-        tx_ref: existingPending.transactionReference,
-        amount: product.price / 100,
-        currency: 'NGN',
-        redirect_url: existingRedirectUrl,
-        customer: {
-          email: buyerEmail,
-          name: buyerName,
-        },
-        customizations: {
-          title: `${product.name} - ${product.user.businessName}`,
-          logo: product.imageUrl,
-        },
-      });
+      if (isStale) {
+        await prisma.order.update({
+          where: { id: existingPending.id },
+          data: { status: 'expired' },
+        });
+        await prisma.paymentLog.create({
+          data: {
+            orderId: existingPending.id,
+            event: 'order_expired',
+            details: `Stale after 30min`,
+          },
+        });
+      } else {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const existingRedirectUrl = `${appUrl}/payment-status?txRef=${existingPending.transactionReference}&productSlug=${product.uniqueSlug}`;
 
-      await prisma.paymentLog.create({
-        data: {
-          orderId: existingPending.id,
-          event: 'order_created',
-          details: `Deduplicated — reused existing order ${existingPending.id}`,
-        },
-      });
+        const paymentData = await initializePayment({
+          tx_ref: existingPending.transactionReference,
+          amount: product.price / 100,
+          currency: 'NGN',
+          redirect_url: existingRedirectUrl,
+          customer: {
+            email: buyerEmail,
+            name: buyerName,
+          },
+          customizations: {
+            title: `${product.name} - ${product.user.businessName}`,
+            ...(product.imageUrl ? { logo: product.imageUrl } : {}),
+          },
+        });
 
-      return NextResponse.json({ ok: true, data: { checkoutUrl: paymentData.link } });
+        await prisma.paymentLog.create({
+          data: {
+            orderId: existingPending.id,
+            event: 'order_created',
+            details: `Deduplicated — reused existing order ${existingPending.id}`,
+          },
+        });
+
+        return NextResponse.json({ ok: true, data: { checkoutUrl: paymentData.link } });
+      }
     }
 
     const txRef = crypto.randomUUID();
@@ -124,7 +140,7 @@ export async function POST(request: Request) {
       },
       customizations: {
         title: `${product.name} - ${product.user.businessName}`,
-        logo: product.imageUrl,
+        ...(product.imageUrl ? { logo: product.imageUrl } : {}),
       },
     });
 

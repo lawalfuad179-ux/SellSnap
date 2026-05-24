@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
@@ -63,7 +64,7 @@ export const Sidebar = ({ mobileOpen, onCloseMobile, onOpenMobile, onboarding }:
       <>
         <aside className={`${styles.sidebar} ${styles.onboardingSidebar}`}>
           <div className={styles.brand}>
-            <h2 className={styles.brandName}>SellSnap</h2>
+            <Image src="/logo.png" alt="SellSnap" width={120} height={31} className={styles.brandImage} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-16)', marginTop: 'auto' }}>
             <button type="button" className={styles.themeButton} onClick={toggleTheme} aria-label="Toggle theme">
@@ -81,6 +82,7 @@ export const Sidebar = ({ mobileOpen, onCloseMobile, onOpenMobile, onboarding }:
         {showConfirm && (
           <div className={styles.overlay} onClick={() => setShowConfirm(false)}>
             <div className={styles.confirmDialog} onClick={(e) => e.stopPropagation()}>
+              <Image src="/favicon.png" alt="SellSnap" width={48} height={51} style={{ margin: '0 auto 12px', display: 'block', width: 'clamp(36px, 8vw, 52px)', height: 'auto' }} />
               <h2 className={styles.confirmBrand}>SellSnap</h2>
               <p className={styles.confirmText}>Are you sure you want to log out?</p>
               <div className={styles.confirmActions}>
@@ -119,7 +121,11 @@ export const Sidebar = ({ mobileOpen, onCloseMobile, onOpenMobile, onboarding }:
       <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''} ${mobileOpen ? styles.mobileOpen : ''}`}>
 
         <div className={styles.brand}>
-          <h2 className={styles.brandName}>{collapsed ? 'S' : 'SellSnap'}</h2>
+          {collapsed ? (
+            <Image src="/favicon.png" alt="SellSnap" width={32} height={34} className={styles.brandIcon} />
+          ) : (
+            <Image src="/logo.png" alt="SellSnap" width={120} height={31} className={styles.brandImage} />
+          )}
         </div>
 
         <button
@@ -151,6 +157,7 @@ export const Sidebar = ({ mobileOpen, onCloseMobile, onOpenMobile, onboarding }:
       {showConfirm && (
         <div className={styles.overlay} onClick={() => setShowConfirm(false)}>
           <div className={styles.confirmDialog} onClick={(e) => e.stopPropagation()}>
+            <Image src="/favicon.png" alt="SellSnap" width={48} height={51} style={{ margin: '0 auto 12px', display: 'block', width: 'clamp(36px, 8vw, 52px)', height: 'auto' }} />
             <h2 className={styles.confirmBrand}>SellSnap</h2>
             <p className={styles.confirmText}>Are you sure you want to log out?</p>
             <div className={styles.confirmActions}>

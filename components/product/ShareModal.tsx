@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import styles from './ShareModal.module.css';
 import { X, Check, Link as LinkIcon } from 'lucide-react';
 
@@ -108,7 +109,7 @@ export function ShareModal({ product, onClose }: ShareModalProps) {
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <div className={styles.brand}>
-            <span className={styles.brandName}>SellSnap</span>
+            <Image src="/logo.png" alt="SellSnap" width={100} height={26} className={styles.brandName} />
           </div>
 
           <div className={styles.productPreview}>

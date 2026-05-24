@@ -12,11 +12,8 @@
 
 /* ── Brand header ── */
 .brand {
-  font-size: var(--font-headline-small-font-size);
-  font-weight: 700;
-  color: var(--color-primary);
   margin-bottom: var(--space-24);
-  letter-spacing: -0.5px;
+  line-height: 0;
 }
 
 /* ── Step indicator ── */

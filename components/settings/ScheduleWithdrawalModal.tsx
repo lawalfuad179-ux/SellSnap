@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { X, CalendarDays } from 'lucide-react';
 
 interface Props {
@@ -54,7 +55,7 @@ export const ScheduleWithdrawalModal = ({ availableBalance, onClose, onSchedule 
         width: '100%', maxWidth: 400, boxShadow: '0 8px 32px hsla(0, 0%, 0%, 0.12)',
       }} onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-24)' }}>
-          <h2 style={{ fontSize: 'var(--font-headline-small-font-size)', color: 'var(--color-primary)', fontWeight: 700 }}>SellSnap</h2>
+          <Image src="/logo.png" alt="SellSnap" width={120} height={31} style={{ width: 'clamp(80px, 20vw, 130px)', height: 'auto' }} />
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-on-surface-variant)' }}>
             <X size={20} />
           </button>

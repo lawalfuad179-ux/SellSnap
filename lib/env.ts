@@ -9,8 +9,11 @@ const envSchema = z.object({
   FLUTTERWAVE_SECRET_HASH: isProd ? z.string().min(1) : z.string().optional(),
   NEXTAUTH_SECRET: z.string().min(1),
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
-  RESEND_API_KEY: z.string().optional(),
-  RESEND_FROM_EMAIL: z.string().optional(),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM_EMAIL: z.string().optional(),
 });
 
 const _env = envSchema.safeParse(process.env);

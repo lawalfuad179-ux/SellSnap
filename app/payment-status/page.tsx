@@ -8,6 +8,8 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { MouseTracker } from '@/components/effects/MouseTracker';
 import { PartyPopper, XCircle, Loader2 } from 'lucide-react';
 
+const MAX_RETRIES = 20;
+
 interface Props {
   searchParams: Promise<{ txRef?: string; status?: string; transaction_id?: string; productSlug?: string }>;
 }
@@ -15,11 +17,14 @@ interface Props {
 export default function PaymentStatusPage({ searchParams }: Props) {
   const { txRef, transaction_id, productSlug } = use(searchParams);
   const [state, setState] = useState<'processing' | 'success' | 'failed'>('processing');
+  const [errorMsg, setErrorMsg] = useState('');
   const pollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const retryRef = useRef(0);
 
   const checkOrder = async () => {
     if (!txRef) {
       setState('failed');
+      setErrorMsg('Missing transaction reference.');
       return;
     }
 
@@ -27,7 +32,7 @@ export default function PaymentStatusPage({ searchParams }: Props) {
       const res = await fetch('/api/orders/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ txRef, flutterwaveTxId: transaction_id || '' }),
+        body: JSON.stringify({ txRef, flutterwaveTxId: transaction_id || undefined }),
       });
       const json = await res.json();
 
@@ -35,18 +40,26 @@ export default function PaymentStatusPage({ searchParams }: Props) {
         setState('success');
         clearInterval(pollRef.current);
       } else if (res.status === 429 || json.pending) {
-        // Rate limited or webhook not yet arrived — keep polling
+        retryRef.current += 1;
+        if (retryRef.current >= MAX_RETRIES) {
+          setState('failed');
+          setErrorMsg('Payment confirmation timed out. The payment may still be processing — check your order history.');
+          clearInterval(pollRef.current);
+        }
       } else {
         setState('failed');
+        setErrorMsg(json.error || 'Something went wrong. Please try again.');
         clearInterval(pollRef.current);
       }
     } catch {
       setState('failed');
+      setErrorMsg('Network error. Please try again.');
       clearInterval(pollRef.current);
     }
   };
 
   useEffect(() => {
+    retryRef.current = 0;
     checkOrder();
     pollRef.current = setInterval(checkOrder, 3000);
     return () => clearInterval(pollRef.current);
@@ -91,11 +104,11 @@ export default function PaymentStatusPage({ searchParams }: Props) {
           <>
             <XCircle size={48} style={{ color: 'var(--color-error)', marginBottom: 'var(--space-16)' }} />
             <h2 style={{ color: 'var(--color-error)', marginBottom: 'var(--space-16)' }}>Payment Failed</h2>
-            <p style={{ color: 'var(--color-on-surface-variant)', marginBottom: 'var(--space-24)' }}>
-              Something went wrong while confirming your payment. Please try again or contact support.
+            <p style={{ color: 'var(--color-on-surface-variant)', marginBottom: 'var(--space-12)' }}>
+              {errorMsg}
             </p>
             <Link href={`/p/${productSlug || ''}`}>
-              <Button fullWidth>Return to Product</Button>
+              <Button fullWidth>Try Again</Button>
             </Link>
           </>
         )}

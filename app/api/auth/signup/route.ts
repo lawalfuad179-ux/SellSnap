@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { signupSchema } from '@/lib/validators/authSchemas';
-
 import { authRateLimiter } from '@/lib/rate-limit';
+import { sendWelcomeEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
@@ -44,6 +44,11 @@ export async function POST(request: Request) {
         businessName,
         passwordHash,
       },
+    });
+
+    // Fire and forget welcome email
+    sendWelcomeEmail({ email: user.email, name: user.name }).catch((e) => {
+      console.error('Welcome email error:', e);
     });
 
     return NextResponse.json({ ok: true, data: { id: user.id } });

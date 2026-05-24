@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { signIn } from 'next-auth/react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -138,7 +139,9 @@ export function SignupForm({ onToggle }: { onToggle: () => void }) {
   return (
     <div style={{ width: '100%', maxWidth: '400px' }}>
       <div style={{ textAlign: 'center', marginBottom: 'var(--space-32)' }}>
-        <h1 style={{ marginBottom: 'var(--space-24)', fontSize: 'var(--font-title-large-font-size)' }}><Link href="/" style={{ color: 'var(--color-primary)', textDecoration: 'none', display: 'inline-block', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>SellSnap</Link></h1>
+        <Link href="/" style={{ display: 'inline-block', transition: 'transform 0.2s', marginBottom: 'var(--space-24)' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+          <Image src="/logo.png" alt="SellSnap" width={160} height={41} style={{ width: 'clamp(120px, 25vw, 180px)', height: 'auto' }} />
+        </Link>
         <p style={{ color: 'var(--color-on-surface-variant)', fontSize: 'var(--font-headline-small-font-size)', fontWeight: '700', marginBottom: 'var(--space-8)' }}>
           {step === 1 ? 'Create your seller account' : 'Almost done!'}
         </p>

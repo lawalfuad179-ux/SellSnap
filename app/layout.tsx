@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   title: 'SellSnap | Sell Products Instantly',
   description: 'The fastest way to sell products instantly using shareable payment links.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  icons: [{ rel: 'icon', url: '/favicon.png' }],
 };
 
 export default function RootLayout({

@@ -36,18 +36,13 @@ a {
 }
 
 .landing-logo {
-  font-size: clamp(32px, 6vw, 64px);
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  line-height: 1.1;
-  color: var(--color-primary);
   margin-bottom: var(--space-16);
-  transition: transform 0.3s ease, text-shadow 0.3s ease;
+  transition: transform 0.3s ease;
+  line-height: 0;
 }
 
 .landing-logo:hover {
   transform: scale(1.05);
-  text-shadow: 0 0 40px hsla(154, 100%, 42%, 0.4);
 }
 
 .landing-title {

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { Input } from '@/components/ui/Input';
 import { ImageUploadField } from '@/components/ui/ImageUploadField';
@@ -83,7 +84,9 @@ export default function OnboardingPage() {
   return (
     <div className={styles.page}>
       {/* Brand */}
-      <div className={styles.brand}>SellSnap</div>
+      <div className={styles.brand}>
+        <Image src="/logo.png" alt="SellSnap" width={140} height={36} style={{ width: 'clamp(100px, 20vw, 160px)', height: 'auto' }} />
+      </div>
 
       {/* Step indicator (1 — 2 — 3 — 4) */}
       <div className={styles.stepIndicator}>
