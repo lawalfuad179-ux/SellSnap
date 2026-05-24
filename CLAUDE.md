@@ -12,7 +12,7 @@ A Next.js 16 marketplace where sellers create a product, get a shareable link (`
 - **Zod 4** for validation. API routes and server actions both `safeParse` and surface `error.issues[0].message`.
 - **Flutterwave** for payments ([lib/flutterwave.ts](lib/flutterwave.ts)). **Mock mode** kicks in when `FLUTTERWAVE_SECRET_KEY` is missing or ends with `xxx` — `initializePayment` returns a fake redirect link with `?mock=true`. Don't remove that path.
 - **Resend** for email (optional — code degrades silently if `RESEND_API_KEY` missing).
-- **bcryptjs** for password hashing (10 rounds).
+- **bcryptjs** for password hashing (14 rounds).
 
 No test runner, no CI. Don't add `expect(...)`-style tests unless asked.
 
