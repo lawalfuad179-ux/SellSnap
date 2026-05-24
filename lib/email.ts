@@ -1,7 +1,9 @@
 import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { logger } from '@/lib/logger';
 
 let transporter: nodemailer.Transporter | null = null;
+let resendClient: Resend | null = null;
 
 function getTransporter(): nodemailer.Transporter | null {
   if (!process.env.SMTP_HOST) return null;
@@ -20,7 +22,46 @@ function getTransporter(): nodemailer.Transporter | null {
   return transporter;
 }
 
-const fromEmail = process.env.SMTP_FROM_EMAIL || 'SellSnap <updates@sellsnap.local>';
+function getResendClient(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null;
+  
+  if (!resendClient) {
+    resendClient = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resendClient;
+}
+
+// Get the correct "from" address based on provider
+function getFromEmail(): string {
+  if (process.env.EMAIL_PROVIDER === 'resend') {
+    return process.env.RESEND_FROM_EMAIL || 'SellSnap <onboarding@resend.dev>';
+  }
+  return process.env.SMTP_FROM_EMAIL || 'SellSnap <updates@sellsnap.local>';
+}
+
+// Unified dispatcher
+async function dispatchEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
+  const provider = process.env.EMAIL_PROVIDER || 'smtp';
+  const from = getFromEmail();
+
+  if (provider === 'resend') {
+    const client = getResendClient();
+    if (!client) {
+      logger.info('Email', 'RESEND_API_KEY not set, skipping email dispatch via Resend');
+      return;
+    }
+    await client.emails.send({ from, to, subject, html });
+    logger.info('Email', 'Dispatched via Resend', { to });
+  } else {
+    const client = getTransporter();
+    if (!client) {
+      logger.info('Email', 'SMTP_HOST not set, skipping email dispatch via SMTP');
+      return;
+    }
+    await client.sendMail({ from, to, subject, html });
+    logger.info('Email', 'Dispatched via SMTP', { to });
+  }
+}
 
 function escapeHtml(text: string): string {
   return text
@@ -44,12 +85,6 @@ export async function sendPaymentConfirmationEmail({
   amount: number;
   buyerEmail: string | null;
 }) {
-  const client = getTransporter();
-  if (!client) {
-    logger.info('Email', 'SMTP_HOST not set, skipping email notification');
-    return;
-  }
-
   try {
     const formattedAmount = `₦${(amount / 100).toLocaleString()}`;
     const safeName = escapeHtml(sellerName);
@@ -57,8 +92,7 @@ export async function sendPaymentConfirmationEmail({
     const safeAmount = escapeHtml(formattedAmount);
     const safeBuyer = buyerEmail ? escapeHtml(buyerEmail) : '';
 
-    await client.sendMail({
-      from: fromEmail,
+    await dispatchEmail({
       to: sellerEmail,
       subject: `You received a payment for ${safeProduct}`,
       html: `<div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
@@ -82,8 +116,6 @@ export async function sendPaymentConfirmationEmail({
         <p style="color: #6b7280; font-size: 14px;">View your orders in the <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard" style="color: #16a34a;">SellSnap dashboard</a>.</p>
       </div>`,
     });
-
-    logger.info('Email', 'Payment confirmation sent');
   } catch (error) {
     logger.error('Email', 'Failed to send payment confirmation', { error: (error as Error)?.message });
   }
@@ -96,18 +128,11 @@ export async function sendPasswordResetEmail({
   email: string;
   resetUrl: string;
 }) {
-  const client = getTransporter();
-  if (!client) {
-    logger.info('Email', 'SMTP_HOST not set, skipping password reset email');
-    return;
-  }
-
   try {
     const safeUrl = escapeHtml(resetUrl);
     const safeEmail = escapeHtml(email);
 
-    await client.sendMail({
-      from: fromEmail,
+    await dispatchEmail({
       to: email,
       subject: 'Reset your SellSnap password',
       html: `<div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
@@ -120,8 +145,6 @@ export async function sendPasswordResetEmail({
         <p style="color: #6b7280; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>
       </div>`,
     });
-
-    logger.info('Email', 'Password reset email sent');
   } catch (error) {
     logger.error('Email', 'Failed to send password reset email', { error: (error as Error)?.message });
   }
@@ -138,41 +161,51 @@ export async function sendBuyerReceiptEmail({
   productName: string;
   amount: number;
 }) {
-  const client = getTransporter();
-  if (!client) {
-    logger.info('Email', 'SMTP_HOST not set, skipping buyer receipt email');
-    return;
-  }
-
   try {
     const formattedAmount = `₦${(amount / 100).toLocaleString()}`;
     const safeBusiness = escapeHtml(sellerBusinessName);
     const safeProduct = escapeHtml(productName);
     const safeAmount = escapeHtml(formattedAmount);
-    const safeBuyerEmail = escapeHtml(buyerEmail);
 
-    await client.sendMail({
-      from: fromEmail,
+    await dispatchEmail({
       to: buyerEmail,
-      subject: `Your receipt for ${safeProduct}`,
-      html: `<div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
-        <h2 style="color: #16a34a;">Thank you for your purchase!</h2>
-        <p>This is a receipt for your recent purchase from <strong>${safeBusiness}</strong>.</p>
-        <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-          <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Product</td>
-            <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">${safeProduct}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Amount Paid</td>
-            <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #16a34a;">${safeAmount}</td>
-          </tr>
+      subject: `Receipt — ${safeProduct}`,
+      html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display: block; margin: 0 auto;">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+
+        <h2 style="color: #111827; font-size: 22px; font-weight: 700; margin: 0 0 8px; text-align: center;">Payment Successful!</h2>
+
+        <p style="color: #374151; font-size: 15px; line-height: 1.5; margin: 0 0 24px; text-align: center;">
+          Thank you for your purchase of <strong>${safeProduct}</strong> from <strong>${safeBusiness}</strong>.
+        </p>
+
+        <table style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; border-collapse: separate; overflow: hidden; margin-bottom: 24px;">
+          <tbody>
+            <tr>
+              <td style="padding: 12px 16px; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">Amount Paid</td>
+              <td style="padding: 12px 16px; font-weight: 700; font-size: 15px; color: #111827; text-align: right; border-bottom: 1px solid #f3f4f6;">${safeAmount}</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 16px; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">Product</td>
+              <td style="padding: 12px 16px; font-weight: 600; font-size: 14px; color: #111827; text-align: right; border-bottom: 1px solid #f3f4f6;">${safeProduct}</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 16px; color: #6b7280; font-size: 14px;">Seller</td>
+              <td style="padding: 12px 16px; font-weight: 600; font-size: 14px; color: #111827; text-align: right;">${safeBusiness}</td>
+            </tr>
+          </tbody>
         </table>
-        <p style="color: #6b7280; font-size: 14px;">If you have any questions about this order, please contact the seller directly.</p>
+
+        <p style="color: #9ca3af; font-size: 13px; line-height: 1.4; text-align: center; margin: 0;">
+          Thank you for choosing <strong>SellSnap</strong>. If you have any questions, reply to this email or contact the seller directly.
+        </p>
       </div>`,
     });
-
-    logger.info('Email', 'Buyer receipt sent', { to: safeBuyerEmail });
   } catch (error) {
     logger.error('Email', 'Failed to send buyer receipt', { error: (error as Error)?.message });
   }
@@ -185,18 +218,10 @@ export async function sendWelcomeEmail({
   email: string;
   name: string;
 }) {
-  const client = getTransporter();
-  if (!client) {
-    logger.info('Email', 'SMTP_HOST not set, skipping welcome email');
-    return;
-  }
-
   try {
     const safeName = escapeHtml(name);
-    const safeEmail = escapeHtml(email);
 
-    await client.sendMail({
-      from: fromEmail,
+    await dispatchEmail({
       to: email,
       subject: 'Welcome to SellSnap!',
       html: `<div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
@@ -214,8 +239,6 @@ export async function sendWelcomeEmail({
         <p style="color: #6b7280; font-size: 14px;">Happy selling!<br/>The SellSnap Team</p>
       </div>`,
     });
-
-    logger.info('Email', 'Welcome email sent', { to: safeEmail });
   } catch (error) {
     logger.error('Email', 'Failed to send welcome email', { error: (error as Error)?.message });
   }

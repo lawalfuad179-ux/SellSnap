@@ -3,6 +3,7 @@ import prisma from '@/lib/db';
 import { verifyTransaction, isMockMode } from '@/lib/flutterwave';
 import { orderRateLimiter } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { sendPaymentConfirmationEmail, sendBuyerReceiptEmail } from '@/lib/email';
 
 async function log(orderId: string | null, event: string, details: string) {
   try {
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
 
     const order = await prisma.order.findUnique({
       where: { transactionReference: txRef },
+      include: { product: { include: { user: true } } },
     });
 
     if (!order) {
@@ -36,7 +38,15 @@ export async function POST(request: Request) {
 
     // Already processed by webhook
     if (order.status === 'paid') {
-      return NextResponse.json({ ok: true });
+      return NextResponse.json({
+        ok: true,
+        data: {
+          productName: order.product.name,
+          sellerBusinessName: order.product.user.businessName,
+          amount: order.amount,
+          transactionReference: order.transactionReference,
+        },
+      });
     }
 
     if (order.status === 'failed' || order.status === 'expired') {
@@ -47,7 +57,7 @@ export async function POST(request: Request) {
     if (isMockMode()) {
       const product = await prisma.product.findUnique({
         where: { id: order.productId },
-        select: { userId: true, name: true },
+        select: { userId: true, name: true, user: true },
       });
 
       await prisma.$transaction([
@@ -76,8 +86,43 @@ export async function POST(request: Request) {
           : []),
       ]);
 
+      if (product && product.user) {
+        const emailPromises = [
+          sendPaymentConfirmationEmail({
+            sellerEmail: product.user.email,
+            sellerName: product.user.name,
+            productName: product.name,
+            amount: order.amount,
+            buyerEmail: order.buyerEmail,
+          })
+        ];
+
+        if (order.buyerEmail) {
+          emailPromises.push(
+            sendBuyerReceiptEmail({
+              buyerEmail: order.buyerEmail,
+              sellerBusinessName: product.user.businessName,
+              productName: product.name,
+              amount: order.amount,
+            })
+          );
+        }
+
+        Promise.allSettled(emailPromises).catch((e) => {
+          logger.error('OrderConfirm', 'Email dispatch error', { error: (e as Error)?.message });
+        });
+      }
+
       await log(order.id, 'redirect_confirmed', 'Mock mode — payment processed');
-      return NextResponse.json({ ok: true });
+      return NextResponse.json({
+        ok: true,
+        data: {
+          productName: order.product.name,
+          sellerBusinessName: order.product.user.businessName,
+          amount: order.amount,
+          transactionReference: order.transactionReference,
+        },
+      });
     }
 
     // Production mode — verify with Flutterwave API, then process.
@@ -108,7 +153,7 @@ export async function POST(request: Request) {
 
       const product = await prisma.product.findUnique({
         where: { id: order.productId },
-        select: { userId: true, name: true },
+        select: { userId: true, name: true, user: true },
       });
 
       await prisma.$transaction([
@@ -137,8 +182,43 @@ export async function POST(request: Request) {
           : []),
       ]);
 
+      if (product && product.user) {
+        const emailPromises = [
+          sendPaymentConfirmationEmail({
+            sellerEmail: product.user.email,
+            sellerName: product.user.name,
+            productName: product.name,
+            amount: order.amount,
+            buyerEmail: order.buyerEmail,
+          })
+        ];
+
+        if (order.buyerEmail) {
+          emailPromises.push(
+            sendBuyerReceiptEmail({
+              buyerEmail: order.buyerEmail,
+              sellerBusinessName: product.user.businessName,
+              productName: product.name,
+              amount: order.amount,
+            })
+          );
+        }
+
+        Promise.allSettled(emailPromises).catch((e) => {
+          logger.error('OrderConfirm', 'Email dispatch error', { error: (e as Error)?.message });
+        });
+      }
+
       await log(order.id, 'redirect_confirmed', `Verified via Flutterwave API. TxID: ${flutterwaveTxId}`);
-      return NextResponse.json({ ok: true });
+      return NextResponse.json({
+        ok: true,
+        data: {
+          productName: order.product.name,
+          sellerBusinessName: order.product.user.businessName,
+          amount: order.amount,
+          transactionReference: order.transactionReference,
+        },
+      });
     }
 
     // Webhook hasn't arrived yet — keep polling

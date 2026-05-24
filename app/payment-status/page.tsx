@@ -18,6 +18,12 @@ export default function PaymentStatusPage({ searchParams }: Props) {
   const { txRef, transaction_id, productSlug } = use(searchParams);
   const [state, setState] = useState<'processing' | 'success' | 'failed'>('processing');
   const [errorMsg, setErrorMsg] = useState('');
+  const [orderData, setOrderData] = useState<{
+    productName: string;
+    sellerBusinessName: string;
+    amount: number;
+    transactionReference: string;
+  } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const retryRef = useRef(0);
 
@@ -37,6 +43,7 @@ export default function PaymentStatusPage({ searchParams }: Props) {
       const json = await res.json();
 
       if (json.ok) {
+        setOrderData(json.data);
         setState('success');
         clearInterval(pollRef.current);
       } else if (res.status === 429 || json.pending) {
@@ -87,15 +94,58 @@ export default function PaymentStatusPage({ searchParams }: Props) {
           </>
         )}
 
-        {state === 'success' && (
+        {state === 'success' && orderData && (
           <>
-            <PartyPopper size={48} style={{ color: '#16a34a', marginBottom: 'var(--space-16)' }} />
-            <h2 style={{ color: '#16a34a', marginBottom: 'var(--space-16)' }}>Payment Successful!</h2>
-            <p style={{ color: 'var(--color-on-surface-variant)', marginBottom: 'var(--space-24)' }}>
-              Your payment has been confirmed. The seller has been notified.
+            <div style={{ marginBottom: 'var(--space-20)' }}>
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto' }}>
+                <circle cx="12" cy="12" r="10" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+            </div>
+
+            <h2 style={{ color: '#111827', fontSize: 'var(--font-headline-small-font-size)', fontWeight: 700, margin: '0 0 var(--space-8)' }}>
+              Payment Successful!
+            </h2>
+
+            <p style={{ color: '#374151', fontSize: 'var(--font-body-medium-font-size)', lineHeight: '1.5', margin: '0 0 var(--space-24)' }}>
+              Thank you for your purchase of <strong>{orderData.productName}</strong> from <strong>{orderData.sellerBusinessName}</strong>.
             </p>
+
+            <div style={{
+              border: '1px solid #e5e7eb',
+              borderRadius: 'var(--radius-md)',
+              padding: 'var(--space-20)',
+              marginBottom: 'var(--space-24)',
+              textAlign: 'left',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--space-8) 0', borderBottom: '1px solid #f3f4f6' }}>
+                <span style={{ color: '#6b7280', fontSize: 'var(--font-body-medium-font-size)' }}>Amount Paid</span>
+                <span style={{ fontWeight: 700, fontSize: 'var(--font-body-large-font-size)', color: '#111827' }}>
+                  ₦{(orderData.amount / 100).toLocaleString()}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--space-8) 0' }}>
+                <span style={{ color: '#6b7280', fontSize: 'var(--font-body-medium-font-size)' }}>Transaction Ref</span>
+                <span style={{
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  fontSize: 'var(--font-label-small-font-size)',
+                  fontWeight: 600,
+                  padding: '4px 12px',
+                  borderRadius: '999px',
+                  fontFamily: 'monospace',
+                }}>
+                  {orderData.transactionReference.slice(0, 8)}...
+                </span>
+              </div>
+            </div>
+
+            <p style={{ color: '#9ca3af', fontSize: 'var(--font-body-small-font-size)', margin: '0 0 var(--space-24)' }}>
+              A receipt has been sent to your email. The seller will contact you shortly.
+            </p>
+
             <Link href={`/p/${productSlug || ''}`}>
-              <Button fullWidth>Return to Product</Button>
+              <Button fullWidth>Continue</Button>
             </Link>
           </>
         )}
